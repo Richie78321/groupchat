@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.28.1
 // 	protoc        v3.12.4
-// source: api/chat_service.proto
+// source: chatservice/chat_service.proto
 
 package chatservice
 
@@ -29,7 +29,7 @@ type TestRequest struct {
 func (x *TestRequest) Reset() {
 	*x = TestRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_chat_service_proto_msgTypes[0]
+		mi := &file_chatservice_chat_service_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -42,7 +42,7 @@ func (x *TestRequest) String() string {
 func (*TestRequest) ProtoMessage() {}
 
 func (x *TestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_chat_service_proto_msgTypes[0]
+	mi := &file_chatservice_chat_service_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *TestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestRequest.ProtoReflect.Descriptor instead.
 func (*TestRequest) Descriptor() ([]byte, []int) {
-	return file_api_chat_service_proto_rawDescGZIP(), []int{0}
+	return file_chatservice_chat_service_proto_rawDescGZIP(), []int{0}
 }
 
 type TestResponse struct {
@@ -67,7 +67,7 @@ type TestResponse struct {
 func (x *TestResponse) Reset() {
 	*x = TestResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_chat_service_proto_msgTypes[1]
+		mi := &file_chatservice_chat_service_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -80,7 +80,7 @@ func (x *TestResponse) String() string {
 func (*TestResponse) ProtoMessage() {}
 
 func (x *TestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_chat_service_proto_msgTypes[1]
+	mi := &file_chatservice_chat_service_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -93,46 +93,46 @@ func (x *TestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestResponse.ProtoReflect.Descriptor instead.
 func (*TestResponse) Descriptor() ([]byte, []int) {
-	return file_api_chat_service_proto_rawDescGZIP(), []int{1}
+	return file_chatservice_chat_service_proto_rawDescGZIP(), []int{1}
 }
 
-var File_api_chat_service_proto protoreflect.FileDescriptor
+var File_chatservice_chat_service_proto protoreflect.FileDescriptor
 
-var file_api_chat_service_proto_rawDesc = []byte{
-	0x0a, 0x16, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x68, 0x61, 0x74, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0b, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x22, 0x0d, 0x0a, 0x0b, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x22, 0x0e, 0x0a, 0x0c, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x32, 0x54, 0x0a, 0x0b, 0x43, 0x68, 0x61, 0x74, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x45, 0x0a, 0x0a, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x72, 0x65, 0x61,
-	0x6d, 0x12, 0x18, 0x2e, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
-	0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x63, 0x68,
-	0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x30, 0x01, 0x42, 0x32, 0x5a, 0x30, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x52, 0x69, 0x63, 0x68, 0x69, 0x65, 0x37,
-	0x38, 0x33, 0x32, 0x31, 0x2f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x63, 0x68, 0x61, 0x74, 0x2f, 0x61,
-	0x70, 0x69, 0x2f, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_chatservice_chat_service_proto_rawDesc = []byte{
+	0x0a, 0x1e, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x68,
+	0x61, 0x74, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x12, 0x0b, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x22, 0x0d, 0x0a,
+	0x0b, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x0e, 0x0a, 0x0c,
+	0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x54, 0x0a, 0x0b,
+	0x43, 0x68, 0x61, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x45, 0x0a, 0x0a, 0x54,
+	0x65, 0x73, 0x74, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x63, 0x68, 0x61, 0x74,
+	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x30, 0x01, 0x42, 0x2e, 0x5a, 0x2c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x52, 0x69, 0x63, 0x68, 0x69, 0x65, 0x37, 0x38, 0x33, 0x32, 0x31, 0x2f, 0x67, 0x72, 0x6f,
+	0x75, 0x70, 0x63, 0x68, 0x61, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x74, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_api_chat_service_proto_rawDescOnce sync.Once
-	file_api_chat_service_proto_rawDescData = file_api_chat_service_proto_rawDesc
+	file_chatservice_chat_service_proto_rawDescOnce sync.Once
+	file_chatservice_chat_service_proto_rawDescData = file_chatservice_chat_service_proto_rawDesc
 )
 
-func file_api_chat_service_proto_rawDescGZIP() []byte {
-	file_api_chat_service_proto_rawDescOnce.Do(func() {
-		file_api_chat_service_proto_rawDescData = protoimpl.X.CompressGZIP(file_api_chat_service_proto_rawDescData)
+func file_chatservice_chat_service_proto_rawDescGZIP() []byte {
+	file_chatservice_chat_service_proto_rawDescOnce.Do(func() {
+		file_chatservice_chat_service_proto_rawDescData = protoimpl.X.CompressGZIP(file_chatservice_chat_service_proto_rawDescData)
 	})
-	return file_api_chat_service_proto_rawDescData
+	return file_chatservice_chat_service_proto_rawDescData
 }
 
-var file_api_chat_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_api_chat_service_proto_goTypes = []interface{}{
+var file_chatservice_chat_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_chatservice_chat_service_proto_goTypes = []interface{}{
 	(*TestRequest)(nil),  // 0: chatservice.TestRequest
 	(*TestResponse)(nil), // 1: chatservice.TestResponse
 }
-var file_api_chat_service_proto_depIdxs = []int32{
+var file_chatservice_chat_service_proto_depIdxs = []int32{
 	0, // 0: chatservice.ChatService.TestStream:input_type -> chatservice.TestRequest
 	1, // 1: chatservice.ChatService.TestStream:output_type -> chatservice.TestResponse
 	1, // [1:2] is the sub-list for method output_type
@@ -142,13 +142,13 @@ var file_api_chat_service_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_api_chat_service_proto_init() }
-func file_api_chat_service_proto_init() {
-	if File_api_chat_service_proto != nil {
+func init() { file_chatservice_chat_service_proto_init() }
+func file_chatservice_chat_service_proto_init() {
+	if File_chatservice_chat_service_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_api_chat_service_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_chatservice_chat_service_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestRequest); i {
 			case 0:
 				return &v.state
@@ -160,7 +160,7 @@ func file_api_chat_service_proto_init() {
 				return nil
 			}
 		}
-		file_api_chat_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_chatservice_chat_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestResponse); i {
 			case 0:
 				return &v.state
@@ -177,18 +177,18 @@ func file_api_chat_service_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_api_chat_service_proto_rawDesc,
+			RawDescriptor: file_chatservice_chat_service_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_chat_service_proto_goTypes,
-		DependencyIndexes: file_api_chat_service_proto_depIdxs,
-		MessageInfos:      file_api_chat_service_proto_msgTypes,
+		GoTypes:           file_chatservice_chat_service_proto_goTypes,
+		DependencyIndexes: file_chatservice_chat_service_proto_depIdxs,
+		MessageInfos:      file_chatservice_chat_service_proto_msgTypes,
 	}.Build()
-	File_api_chat_service_proto = out.File
-	file_api_chat_service_proto_rawDesc = nil
-	file_api_chat_service_proto_goTypes = nil
-	file_api_chat_service_proto_depIdxs = nil
+	File_chatservice_chat_service_proto = out.File
+	file_chatservice_chat_service_proto_rawDesc = nil
+	file_chatservice_chat_service_proto_goTypes = nil
+	file_chatservice_chat_service_proto_depIdxs = nil
 }

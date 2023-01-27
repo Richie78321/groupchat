@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/Richie78321/groupchat/api/chatservice";
+option go_package = "github.com/Richie78321/groupchat/chatservice";
 
 package chatservice;
 
