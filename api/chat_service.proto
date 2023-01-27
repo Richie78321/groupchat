@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/Richie78321/groupchat/api/chatservice";
+
+package chatservice;
+
+message TestRequest {}
+message TestResponse {}
+
+service ChatService {
+    rpc TestStream(TestRequest) returns (stream TestResponse) {}
+}
