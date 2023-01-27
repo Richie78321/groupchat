@@ -5,3 +5,6 @@ protoc:
 
 servercli:
 	go build -o bin/ cmd/servercli/servercli.go
+
+clientcli:
+	go build -o bin/ cmd/clientcli/clientcli.go
