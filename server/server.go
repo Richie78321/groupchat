@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"time"
 
@@ -15,26 +14,22 @@ type chatServer struct {
 	pb.UnimplementedChatServiceServer
 }
 
-func (s *chatServer) TestStream(req *pb.TestRequest, stream pb.ChatService_TestStreamServer) error {
-	fmt.Println("Waiting for client to be done")
-	<-stream.Context().Done()
-
-	fmt.Println("Client is done. Exiting")
-	return nil
-}
-
-func Start() {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:3000"))
+func Start(serverAddress string) error {
+	lis, err := net.Listen("tcp", serverAddress)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return err
 	}
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		Time: time.Minute,
+		// Keepalive will disconnect an unresponsive client after approximately 1 minute (Time + Timeout).
+		Time:    30 * time.Second,
+		Timeout: 30 * time.Second,
 	}))
 
 	pb.RegisterChatServiceServer(grpcServer, new(chatServer))
 
 	fmt.Println("Running server...")
 	grpcServer.Serve(lis)
+
+	return nil
 }
