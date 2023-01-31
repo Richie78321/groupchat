@@ -2,24 +2,47 @@ package client
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"io"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func Start() {
-	conn, err := grpc.Dial("localhost:3000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func Start(target string) error {
+	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
+		return err
 	}
 
 	client := pb.NewChatServiceClient(conn)
-	stream, err := client.TestStream(context.Background(), &pb.TestRequest{})
+	stream, err := client.SubscribeChatroom(context.TODO(), &pb.SubscribeChatroomRequest{
+		Self: &pb.User{
+			Username: "richie",
+		},
+		Chatroom: &pb.Chatroom{
+			Name: "test",
+		},
+	})
 	if err != nil {
-		log.Fatalf("failed to send request: %v", err)
+		return err
 	}
 
-	<-stream.Context().Done()
+	num := 0
+	for {
+		fmt.Println("Waiting for next update...")
+		update, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		num += 1
+		fmt.Printf("Update %d: %s\n", num, update.String())
+	}
+
+	return nil
 }

@@ -3,6 +3,7 @@ package chatdata
 import (
 	"sync"
 
+	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/google/uuid"
 )
 
@@ -18,14 +19,12 @@ type Chatroom interface {
 	SignalSubscriptions()
 	AddSubscription(Subscription)
 	RemoveSubscription(uuid.UUID)
-}
-
-type Message interface {
+	GetUsers() []*pb.User
 }
 
 type Subscription interface {
 	Id() uuid.UUID
-	Username() string
+	User() *pb.User
 
 	SignalUpdate()
 	ShouldUpdate() <-chan struct{}

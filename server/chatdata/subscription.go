@@ -1,19 +1,22 @@
 package chatdata
 
-import "github.com/google/uuid"
+import (
+	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/google/uuid"
+)
 
 type subscription struct {
-	id       uuid.UUID
-	username string
+	id   uuid.UUID
+	user *pb.User
 
 	// A channel for signalling with a strict buffer size of 1.
 	update chan struct{}
 }
 
-func NewSubscription(username string) Subscription {
+func NewSubscription(user *pb.User) Subscription {
 	return &subscription{
-		id:       uuid.New(),
-		username: username,
+		id:   uuid.New(),
+		user: user,
 
 		// The buffer size is strictly 1 to ensure proper signalling behavior.
 		update: make(chan struct{}, 1),
@@ -24,8 +27,8 @@ func (s *subscription) Id() uuid.UUID {
 	return s.id
 }
 
-func (s *subscription) Username() string {
-	return s.username
+func (s *subscription) User() *pb.User {
+	return s.user
 }
 
 func (s *subscription) SignalUpdate() {

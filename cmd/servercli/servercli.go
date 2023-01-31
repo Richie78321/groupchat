@@ -1,7 +1,13 @@
 package main
 
-import "github.com/Richie78321/groupchat/server"
+import (
+	"log"
+
+	"github.com/Richie78321/groupchat/server"
+)
 
 func main() {
-	server.Start("localhost:3000")
+	if err := server.Start("localhost:3000"); err != nil {
+		log.Fatalf("%v", err)
+	}
 }
