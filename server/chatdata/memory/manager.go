@@ -31,7 +31,3 @@ func (m *memoryManager) GetOrCreateRoom(roomName string) chatdata.Chatroom {
 	m.chatrooms[roomName] = newRoom
 	return newRoom
 }
-
-func (m *memoryManager) AddSubscription(s chatdata.Subscription) {
-
-}
