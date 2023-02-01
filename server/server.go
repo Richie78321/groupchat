@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"time"
@@ -20,10 +19,12 @@ type chatServer struct {
 
 func newChatServer() *chatServer {
 	return &chatServer{
+		// Assuming a reliable server, we use in-memory data
 		manager: memory.NewMemoryManager(),
 	}
 }
 
+// Send an update of the chatroom state over the provided stream.
 func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_SubscribeChatroomServer) error {
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
@@ -48,45 +49,47 @@ func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream 
 	chatroom.GetLock().Lock()
 	chatroom.AddSubscription(subscription)
 	chatroom.GetLock().Unlock()
+	log.Printf("Added subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
 
 	// Remove this subscription from the chatroom's current subscriptions at exit
 	defer func() {
 		chatroom.GetLock().Lock()
 		chatroom.RemoveSubscription(subscription.Id())
 		chatroom.GetLock().Unlock()
+		log.Printf("Removed subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
 	}()
-
-	fmt.Println("Accepted new client")
 
 	for {
 		select {
 		case <-subscription.ShouldUpdate():
+			// When signalled to update, send an update over the server stream
 			if err := sendSubscriptionUpdate(chatroom, stream); err != nil {
 				log.Printf("%v", err)
 				return err
 			}
 		case <-stream.Context().Done():
-			fmt.Println("Client disconnected")
 			return nil
 		}
 	}
 }
 
-func Start(serverAddress string) error {
-	lis, err := net.Listen("tcp", serverAddress)
+func Start(address string) error {
+	// We strictly use TCP as the transport for reliable, in-order transfer.
+	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		// Keepalive will disconnect an unresponsive client after approximately 1 minute (Time + Timeout).
+		// This means we have a maximum user online status staleness of around 1 minute.
 		Time:    30 * time.Second,
 		Timeout: 30 * time.Second,
 	}))
 
 	pb.RegisterChatServiceServer(grpcServer, newChatServer())
 
-	fmt.Println("Running server...")
+	log.Printf("Running server on %s...\n", address)
 	grpcServer.Serve(lis)
 
 	return nil
