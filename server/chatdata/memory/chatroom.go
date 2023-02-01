@@ -31,7 +31,7 @@ func (c *memoryChatroom) SignalSubscriptions() {
 }
 
 func (c *memoryChatroom) AddSubscription(s chatdata.Subscription) {
-	// Order matters here: we want to signal all existing subscriptions
+	// Order matters here: we want to signal only the existing subscriptions, not the new one
 	c.SignalSubscriptions()
 	c.subscriptions[s.Id()] = s
 }
