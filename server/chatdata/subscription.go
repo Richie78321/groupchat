@@ -9,7 +9,7 @@ type subscription struct {
 	id   uuid.UUID
 	user *pb.User
 
-	// A channel for signalling with a strict buffer size of 1.
+	// A channel for signalling updates. Needs a strict buffer size of 1.
 	update chan struct{}
 }
 
