@@ -1,48 +1,55 @@
 package client
 
 import (
-	"context"
-	"fmt"
-	"io"
+	"bufio"
+	"log"
+	"os"
+	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/buger/goterm"
+	"github.com/google/shlex"
+	"github.com/jessevdk/go-flags"
 )
 
-func Start(target string) error {
-	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return err
-	}
+var client struct {
+	printLock    sync.Mutex
+	pbClient     pb.ChatServiceClient
+	user         *pb.User
+	subscription *subscription
+}
 
-	client := pb.NewChatServiceClient(conn)
-	stream, err := client.SubscribeChatroom(context.TODO(), &pb.SubscribeChatroomRequest{
-		Self: &pb.User{
-			Username: "richie",
-		},
-		Chatroom: &pb.Chatroom{
-			Name: "test",
-		},
-	})
-	if err != nil {
-		return err
-	}
+var parser = flags.NewParser(&struct{}{}, flags.HelpFlag)
 
-	num := 0
-	for {
-		fmt.Println("Waiting for next update...")
-		update, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
+func Start() {
+	// Do initial screen clear
+	client.printLock.Lock()
+	goterm.Clear()
+	goterm.MoveCursor(0, 0)
+	goterm.Flush()
+	client.printLock.Unlock()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		splitArgs, err := shlex.Split(scanner.Text())
 		if err != nil {
-			return err
+			log.Fatalf("%v", err)
 		}
 
-		num += 1
-		fmt.Printf("Update %d: %s\n", num, update.String())
+		client.printLock.Lock()
+		goterm.Clear()
+		goterm.MoveCursor(0, 0)
+
+		_, err = parser.ParseArgs(splitArgs)
+		if err != nil {
+			goterm.Printf("error: %v\n", err)
+		}
+
+		goterm.Flush()
+		client.printLock.Unlock()
 	}
 
-	return nil
+	if err := scanner.Err(); err != nil {
+		log.Fatalf("%v", err)
+	}
 }

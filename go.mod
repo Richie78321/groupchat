@@ -9,7 +9,10 @@ require (
 )
 
 require (
+	github.com/buger/goterm v1.0.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/jessevdk/go-flags v1.5.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
