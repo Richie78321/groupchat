@@ -10,17 +10,19 @@ import (
 type Manager interface {
 	GetLock() sync.Locker
 
-	GetRoom(roomName string) (Chatroom, bool)
+	Room(roomName string) (Chatroom, bool)
 	CreateRoom(roomName string) Chatroom
 }
 
 type Chatroom interface {
 	GetLock() sync.Locker
 
+	RoomName() string
+
 	SignalSubscriptions()
 	AddSubscription(Subscription)
 	RemoveSubscription(uuid.UUID)
-	GetUsers() []*pb.User
+	Users() []*pb.User
 }
 
 type Subscription interface {

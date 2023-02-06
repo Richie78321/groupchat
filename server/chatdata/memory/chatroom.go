@@ -9,15 +9,21 @@ import (
 )
 
 type memoryChatroom struct {
+	roomName      string
 	lock          sync.Mutex
 	subscriptions map[uuid.UUID]chatdata.Subscription
 }
 
 func newMemoryChatroom(roomName string) *memoryChatroom {
 	return &memoryChatroom{
+		roomName:      roomName,
 		lock:          sync.Mutex{},
 		subscriptions: make(map[uuid.UUID]chatdata.Subscription),
 	}
+}
+
+func (c *memoryChatroom) RoomName() string {
+	return c.roomName
 }
 
 func (c *memoryChatroom) GetLock() sync.Locker {
@@ -42,7 +48,7 @@ func (c *memoryChatroom) RemoveSubscription(u uuid.UUID) {
 	c.SignalSubscriptions()
 }
 
-func (c *memoryChatroom) GetUsers() (users []*pb.User) {
+func (c *memoryChatroom) Users() (users []*pb.User) {
 	for _, subscription := range c.subscriptions {
 		users = append(users, subscription.User())
 	}

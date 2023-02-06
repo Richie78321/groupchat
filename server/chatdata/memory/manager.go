@@ -29,7 +29,7 @@ func (m *memoryManager) CreateRoom(roomName string) chatdata.Chatroom {
 	return chatroom
 }
 
-func (m *memoryManager) GetRoom(roomName string) (chatdata.Chatroom, bool) {
+func (m *memoryManager) Room(roomName string) (chatdata.Chatroom, bool) {
 	room, ok := m.chatrooms[roomName]
 	return room, ok
 }
