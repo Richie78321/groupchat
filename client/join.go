@@ -12,10 +12,10 @@ import (
 )
 
 type subscription struct {
-	name   string
-	stream pb.ChatService_SubscribeChatroomClient
-	cancel context.CancelFunc
-	ctx    context.Context
+	chatroom *pb.Chatroom
+	stream   pb.ChatService_SubscribeChatroomClient
+	cancel   context.CancelFunc
+	ctx      context.Context
 }
 
 func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
@@ -24,7 +24,7 @@ func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 	goterm.Clear()
 	goterm.MoveCursor(0, 0)
 
-	goterm.Printf("Group: %s\n", s.name)
+	goterm.Printf("Group: %s\n", s.chatroom.Name)
 
 	// De-deuplicate the usernames for display
 	usernameMap := make(map[string]struct{})
@@ -62,7 +62,7 @@ func endSubscription() {
 		return
 	}
 
-	goterm.Printf("Ending existing subscription to `%s`\n", client.subscription.name)
+	goterm.Printf("Ending existing subscription to `%s`\n", client.subscription.chatroom.Name)
 	client.subscription.cancel()
 	client.subscription = nil
 }
@@ -104,7 +104,9 @@ func (j *joinArgs) Execute(args []string) error {
 	}
 
 	client.subscription = &subscription{
-		name:   j.Args.Group,
+		chatroom: &pb.Chatroom{
+			Name: j.Args.Group,
+		},
 		stream: stream,
 		cancel: cancel,
 		ctx:    ctx,
