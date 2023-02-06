@@ -23,6 +23,9 @@ func newMemoryChatroom(roomName string) *memoryChatroom {
 		roomName:      roomName,
 		lock:          sync.Mutex{},
 		subscriptions: make(map[uuid.UUID]chatdata.Subscription),
+
+		messages:       make([]chatdata.Message, 0),
+		messagesByUuid: make(map[uuid.UUID]chatdata.Message),
 	}
 }
 
