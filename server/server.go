@@ -34,9 +34,9 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
-	latestMessagesPb := make([]*pb.Message, latestMessageWindow)
-	for i, m := range chatroom.GetLatestMessages(latestMessageWindow) {
-		latestMessagesPb[i] = chatdata.MessageToPb(m)
+	latestMessagesPb := make([]*pb.Message, 0)
+	for _, m := range chatroom.GetLatestMessages(latestMessageWindow) {
+		latestMessagesPb = append(latestMessagesPb, chatdata.MessageToPb(m))
 	}
 
 	return stream.Send(&pb.ChatroomSubscriptionUpdate{
