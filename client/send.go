@@ -18,6 +18,11 @@ func init() {
 }
 
 func (s *sendArgs) Execute(args []string) error {
+	if len(s.Args.Message) <= 0 {
+		goterm.Println("Message cannot be empty")
+		return nil
+	}
+
 	// We assume that having a current subscription implies having
 	// a valid username and an active connection to the server.
 	if client.subscription == nil {

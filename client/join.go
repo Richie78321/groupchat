@@ -40,6 +40,11 @@ func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 	sort.Strings(usernames)
 	goterm.Printf("Participants: %s\n", strings.Join(usernames, ", "))
 
+	for i, m := range update.LatestMessages {
+		// TODO(richie): Add likers when they are implemented
+		goterm.Printf("%d. %s: %s\n", i+1, m.Author.Username, m.Body)
+	}
+
 	goterm.Flush()
 }
 
