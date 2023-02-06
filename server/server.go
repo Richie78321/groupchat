@@ -15,6 +15,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const latestMessageWindow = 10
+
 type chatServer struct {
 	manager chatdata.Manager
 	pb.UnimplementedChatServiceServer
@@ -32,8 +34,14 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
+	latestMessagesPb := make([]*pb.Message, latestMessageWindow)
+	for i, m := range chatroom.GetLatestMessages(latestMessageWindow) {
+		latestMessagesPb[i] = chatdata.MessageToPb(m)
+	}
+
 	return stream.Send(&pb.ChatroomSubscriptionUpdate{
-		Participants: chatroom.Users(),
+		Participants:   chatroom.Users(),
+		LatestMessages: latestMessagesPb,
 	})
 }
 

@@ -72,3 +72,12 @@ func (c *memoryChatroom) AppendMessage(author *pb.User, body string) {
 	// A new message has been added, so signal the subscribers
 	c.SignalSubscriptions()
 }
+
+func (c *memoryChatroom) GetLatestMessages(n int) []chatdata.Message {
+	index := len(c.messages) - n
+	if index <= 0 {
+		return c.messages
+	}
+
+	return c.messages[index:]
+}
