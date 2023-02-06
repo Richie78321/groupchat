@@ -15,6 +15,7 @@ type subscription struct {
 	name   string
 	stream pb.ChatService_SubscribeChatroomClient
 	cancel context.CancelFunc
+	ctx    context.Context
 }
 
 func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
@@ -45,7 +46,7 @@ func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 func (s *subscription) ingestUpdates() {
 	for {
 		update, err := s.stream.Recv()
-		if err == io.EOF {
+		if err == io.EOF || s.ctx.Err() == context.Canceled {
 			break
 		}
 		if err != nil {
@@ -61,7 +62,7 @@ func endSubscription() {
 		return
 	}
 
-	goterm.Println("Ending existing subscription to `%s`", client.subscription.name)
+	goterm.Printf("Ending existing subscription to `%s`\n", client.subscription.name)
 	client.subscription.cancel()
 	client.subscription = nil
 }
@@ -106,6 +107,7 @@ func (j *joinArgs) Execute(args []string) error {
 		name:   j.Args.Group,
 		stream: stream,
 		cancel: cancel,
+		ctx:    ctx,
 	}
 
 	// Spawn a thread to ingest the updates
