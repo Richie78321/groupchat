@@ -8,8 +8,11 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/Richie78321/groupchat/server/chatdata"
 	"github.com/Richie78321/groupchat/server/chatdata/memory"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 type chatServer struct {
@@ -74,6 +77,61 @@ func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream 
 			return nil
 		}
 	}
+}
+
+func (s *chatServer) getChatroomOrFail(r *pb.Chatroom) (chatdata.Chatroom, error) {
+	chatroom, ok := s.manager.Room(r.Name)
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "chatroom `%s` does not exist", r.Name)
+	}
+
+	return chatroom, nil
+}
+
+// Return a gRPC error if the user is not logged into the chatroom.
+func ensureUserLoggedIn(c chatdata.Chatroom, u *pb.User) error {
+	// There is currently no way to ensure that the request is actually being made
+	// by this user. This could be improved by using subscription UUIDs (which are
+	// hard to guess) as the identifier. We avoid this for simplicity.
+	users := c.Users()
+
+	// This could be made faster than a linear scan, but this works for now.
+	for _, user := range users {
+		if user.Username == u.Username {
+			return nil
+		}
+	}
+
+	return status.Errorf(codes.PermissionDenied, "user `%s` is not logged into chatroom `%s`", u.Username, c.RoomName())
+}
+
+func sendChatHelper(ctx context.Context, c chatdata.Chatroom, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
+	c.GetLock().Lock()
+	// Helper created to use defer on unlock.
+	defer c.GetLock().Unlock()
+
+	// Ensure the user is logged in
+	err := ensureUserLoggedIn(c, req.Self)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the message and append it to the chatroom
+	c.AppendMessage(req.Self, req.Body)
+
+	return &pb.SendChatResponse{}, nil
+}
+
+func (s *chatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
+	// Get the chatroom if it exists
+	s.manager.GetLock().Lock()
+	chatroom, err := s.getChatroomOrFail(req.Chatroom)
+	s.manager.GetLock().Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return sendChatHelper(ctx, chatroom, req)
 }
 
 func Start(address string) error {

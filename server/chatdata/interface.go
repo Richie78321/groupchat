@@ -23,6 +23,8 @@ type Chatroom interface {
 	AddSubscription(Subscription)
 	RemoveSubscription(uuid.UUID)
 	Users() []*pb.User
+
+	AppendMessage(*pb.User, string)
 }
 
 type Subscription interface {
@@ -31,4 +33,10 @@ type Subscription interface {
 
 	SignalUpdate()
 	ShouldUpdate() <-chan struct{}
+}
+
+type Message interface {
+	Id() uuid.UUID
+	Author() *pb.User
+	Body() string
 }

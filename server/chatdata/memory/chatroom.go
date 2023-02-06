@@ -12,6 +12,10 @@ type memoryChatroom struct {
 	roomName      string
 	lock          sync.Mutex
 	subscriptions map[uuid.UUID]chatdata.Subscription
+
+	// Messages in chronological order
+	messages       []chatdata.Message
+	messagesByUuid map[uuid.UUID]chatdata.Message
 }
 
 func newMemoryChatroom(roomName string) *memoryChatroom {
@@ -54,4 +58,14 @@ func (c *memoryChatroom) Users() (users []*pb.User) {
 	}
 
 	return users
+}
+
+func (c *memoryChatroom) AppendMessage(author *pb.User, body string) {
+	newMessage := newMemoryMessage(author, body)
+
+	c.messages = append(c.messages, newMessage)
+	c.messagesByUuid[newMessage.Id()] = newMessage
+
+	// A new message has been added, so signal the subscribers
+	c.SignalSubscriptions()
 }
