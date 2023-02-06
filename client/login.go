@@ -15,12 +15,12 @@ func init() {
 	parser.AddCommand("u", "login", "", &loginArgs{})
 }
 
-func (j *loginArgs) Execute(args []string) error {
+func (l *loginArgs) Execute(args []string) error {
 	// Existing subscription ends when logging in as a new user
 	endSubscription()
 
 	client.user = &pb.User{
-		Username: j.Args.Username,
+		Username: l.Args.Username,
 	}
 
 	goterm.Printf("Logged in as user `%s`\n", client.user.Username)
