@@ -22,12 +22,14 @@ func (m *memoryManager) GetLock() sync.Locker {
 	return &m.lock
 }
 
-func (m *memoryManager) GetOrCreateRoom(roomName string) chatdata.Chatroom {
-	if room, ok := m.chatrooms[roomName]; ok {
-		return room
-	}
+func (m *memoryManager) CreateRoom(roomName string) chatdata.Chatroom {
+	chatroom := newMemoryChatroom(roomName)
+	m.chatrooms[roomName] = chatroom
 
-	newRoom := newMemoryChatroom(roomName)
-	m.chatrooms[roomName] = newRoom
-	return newRoom
+	return chatroom
+}
+
+func (m *memoryManager) GetRoom(roomName string) (chatdata.Chatroom, bool) {
+	room, ok := m.chatrooms[roomName]
+	return room, ok
 }

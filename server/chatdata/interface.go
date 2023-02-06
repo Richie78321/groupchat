@@ -10,7 +10,8 @@ import (
 type Manager interface {
 	GetLock() sync.Locker
 
-	GetOrCreateRoom(roomName string) Chatroom
+	GetRoom(roomName string) (Chatroom, bool)
+	CreateRoom(roomName string) Chatroom
 }
 
 type Chatroom interface {

@@ -37,7 +37,10 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream pb.ChatService_SubscribeChatroomServer) error {
 	// Get or create the requested chatroom
 	s.manager.GetLock().Lock()
-	chatroom := s.manager.GetOrCreateRoom(req.Chatroom.Name)
+	chatroom, ok := s.manager.GetRoom(req.Chatroom.Name)
+	if !ok {
+		chatroom = s.manager.CreateRoom(req.Chatroom.Name)
+	}
 	s.manager.GetLock().Unlock()
 
 	subscription := chatdata.NewSubscription(req.Self)
