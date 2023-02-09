@@ -20,7 +20,7 @@ func init() {
 }
 
 func (c *connectArgs) Execute(args []string) error {
-	if client.pbClient != nil {
+	if connected() {
 		goterm.Println("Already connected")
 		return nil
 	}

@@ -23,9 +23,7 @@ func (s *sendArgs) Execute(args []string) error {
 		return nil
 	}
 
-	// We assume that having a current subscription implies having
-	// a valid username and an active connection to the server.
-	if client.subscription == nil {
+	if !inChatroom() {
 		goterm.Println("Not in a chatroom")
 		return nil
 	}

@@ -20,6 +20,18 @@ var client struct {
 	subscription *subscription
 }
 
+func loggedIn() bool {
+	return client.user != nil
+}
+
+func connected() bool {
+	return client.pbClient != nil
+}
+
+func inChatroom() bool {
+	return client.subscription != nil
+}
+
 var parser = flags.NewParser(&struct{}{}, flags.HelpFlag)
 
 func splitArgs(text string) ([]string, error) {

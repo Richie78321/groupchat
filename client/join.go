@@ -83,12 +83,12 @@ func init() {
 }
 
 func (j *joinArgs) Execute(args []string) error {
-	if client.pbClient == nil {
+	if !connected() {
 		goterm.Println("Not connected to a server")
 		return nil
 	}
 
-	if client.user == nil {
+	if !loggedIn() {
 		goterm.Println("Need to login first")
 		return nil
 	}
