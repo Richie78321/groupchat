@@ -8,7 +8,6 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/Richie78321/groupchat/server/chatdata"
 	"github.com/Richie78321/groupchat/server/chatdata/memory"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -26,59 +25,6 @@ func newChatServer() *chatServer {
 	return &chatServer{
 		// Assuming a reliable server, we use in-memory data
 		manager: memory.NewMemoryManager(),
-	}
-}
-
-// Send an update of the chatroom state over the provided stream.
-func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_SubscribeChatroomServer) error {
-	chatroom.GetLock().Lock()
-	defer chatroom.GetLock().Unlock()
-
-	return stream.Send(&pb.ChatroomSubscriptionUpdate{
-		Participants:   chatroom.Users(),
-		LatestMessages: chatdata.MessageListToPb(chatroom.GetLatestMessages(latestMessageWindow)),
-	})
-}
-
-func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream pb.ChatService_SubscribeChatroomServer) error {
-	// Get or create the requested chatroom
-	s.manager.GetLock().Lock()
-	chatroom, ok := s.manager.Room(req.Chatroom.Name)
-	if !ok {
-		chatroom = s.manager.CreateRoom(req.Chatroom.Name)
-	}
-	s.manager.GetLock().Unlock()
-
-	subscription := chatdata.NewSubscription(req.Self)
-
-	// Trigger this subscription to send an initial update
-	subscription.SignalUpdate()
-
-	// Add this subscription to the chatroom's current subscriptions
-	chatroom.GetLock().Lock()
-	chatroom.AddSubscription(subscription)
-	chatroom.GetLock().Unlock()
-	log.Printf("Added subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
-
-	// Remove this subscription from the chatroom's current subscriptions at exit
-	defer func() {
-		chatroom.GetLock().Lock()
-		chatroom.RemoveSubscription(subscription.Id())
-		chatroom.GetLock().Unlock()
-		log.Printf("Removed subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
-	}()
-
-	for {
-		select {
-		case <-subscription.ShouldUpdate():
-			// When signalled to update, send an update over the server stream
-			if err := sendSubscriptionUpdate(chatroom, stream); err != nil {
-				log.Printf("%v", err)
-				return err
-			}
-		case <-stream.Context().Done():
-			return nil
-		}
 	}
 }
 
@@ -106,52 +52,6 @@ func ensureUserLoggedIn(c chatdata.Chatroom, u *pb.User) error {
 	}
 
 	return status.Errorf(codes.PermissionDenied, "user `%s` is not logged into chatroom `%s`", u.Username, c.RoomName())
-}
-
-func sendChatHelper(ctx context.Context, c chatdata.Chatroom, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
-	c.GetLock().Lock()
-	// Helper created to use defer on unlock.
-	defer c.GetLock().Unlock()
-
-	// Ensure the user is logged in
-	err := ensureUserLoggedIn(c, req.Self)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create the message and append it to the chatroom
-	c.AppendMessage(req.Self, req.Body)
-
-	return &pb.SendChatResponse{}, nil
-}
-
-func (s *chatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
-	// Get the chatroom if it exists
-	s.manager.GetLock().Lock()
-	chatroom, err := s.getChatroomOrFail(req.Chatroom)
-	s.manager.GetLock().Unlock()
-	if err != nil {
-		return nil, err
-	}
-
-	return sendChatHelper(ctx, chatroom, req)
-}
-
-func (s *chatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryRequest) (*pb.MessageHistoryResponse, error) {
-	// Get the chatroom if it exists
-	s.manager.GetLock().Lock()
-	chatroom, err := s.getChatroomOrFail(req.Chatroom)
-	s.manager.GetLock().Unlock()
-	if err != nil {
-		return nil, err
-	}
-
-	chatroom.GetLock().Lock()
-	defer chatroom.GetLock().Unlock()
-
-	return &pb.MessageHistoryResponse{
-		Messages: chatdata.MessageListToPb(chatroom.GetAllMessages()),
-	}, nil
 }
 
 func Start(address string) error {
