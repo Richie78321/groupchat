@@ -2,13 +2,14 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"sort"
 	"strings"
+	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/buger/goterm"
 )
 
 type subscription struct {
@@ -16,15 +17,37 @@ type subscription struct {
 	stream   pb.ChatService_SubscribeChatroomClient
 	cancel   context.CancelFunc
 	ctx      context.Context
+
+	// The subscription lock should be strictly acquired after acquiring the print lock.
+	// Otherwise deadlocks are possible.
+	lock           sync.Mutex
+	latestMessages []*pb.Message
+}
+
+func (s *subscription) showLatestMessages(messages []*pb.Message) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Update the latest messages in the subscription so other functions
+	// can reference them (for example to like a message by display index)
+	s.latestMessages = messages
+
+	if len(s.latestMessages) <= 0 {
+		fmt.Printf("<No messages to display>\n")
+		return
+	}
+
+	for i, m := range s.latestMessages {
+		// TODO(richie): Add likers when they are implemented
+		fmt.Printf("%d. %s: %s\n", i+1, m.Author.Username, m.Body)
+	}
 }
 
 func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 	client.printLock.Lock()
 	defer client.printLock.Unlock()
-	goterm.Clear()
-	goterm.MoveCursor(0, 0)
 
-	goterm.Printf("Group: %s\n", s.chatroom.Name)
+	fmt.Printf("Group: %s\n", s.chatroom.Name)
 
 	// De-deuplicate the usernames for display
 	usernameMap := make(map[string]struct{})
@@ -38,14 +61,11 @@ func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 	// Sort the usernames for consistency (key order is not guaranteed when
 	// de-duplicating)
 	sort.Strings(usernames)
-	goterm.Printf("Participants: %s\n", strings.Join(usernames, ", "))
+	fmt.Printf("Participants: %s\n", strings.Join(usernames, ", "))
 
-	for i, m := range update.LatestMessages {
-		// TODO(richie): Add likers when they are implemented
-		goterm.Printf("%d. %s: %s\n", i+1, m.Author.Username, m.Body)
-	}
+	s.showLatestMessages(update.LatestMessages)
 
-	goterm.Flush()
+	printSeparator()
 }
 
 func (s *subscription) ingestUpdates() {
@@ -67,7 +87,7 @@ func endSubscription() {
 		return
 	}
 
-	goterm.Printf("Ending existing subscription to `%s`\n", client.subscription.chatroom.Name)
+	fmt.Printf("Ending existing subscription to `%s`\n", client.subscription.chatroom.Name)
 	client.subscription.cancel()
 	client.subscription = nil
 }

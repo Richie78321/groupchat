@@ -2,13 +2,13 @@ package client
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/buger/goterm"
 	"github.com/google/shlex"
 	"github.com/jessevdk/go-flags"
 )
@@ -44,14 +44,11 @@ func splitArgs(text string) ([]string, error) {
 	return shlex.Split(text)
 }
 
-func Start() {
-	// Do initial screen clear
-	client.printLock.Lock()
-	goterm.Clear()
-	goterm.MoveCursor(0, 0)
-	goterm.Flush()
-	client.printLock.Unlock()
+func printSeparator() {
+	fmt.Printf("\n---\n")
+}
 
+func Start() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		splitArgs, err := splitArgs(scanner.Text())
@@ -60,15 +57,13 @@ func Start() {
 		}
 
 		client.printLock.Lock()
-		goterm.Clear()
-		goterm.MoveCursor(0, 0)
 
 		_, err = parser.ParseArgs(splitArgs)
 		if err != nil {
-			goterm.Printf("error: %v\n", err)
+			fmt.Printf("error: %v\n", err)
 		}
 
-		goterm.Flush()
+		printSeparator()
 		client.printLock.Unlock()
 	}
 

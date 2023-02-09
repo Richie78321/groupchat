@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/buger/goterm"
 )
 
 type joinArgs struct {
@@ -19,12 +19,12 @@ func init() {
 
 func (j *joinArgs) Execute(args []string) error {
 	if !connected() {
-		goterm.Println("Not connected to a server")
+		fmt.Println("Not connected to a server")
 		return nil
 	}
 
 	if !loggedIn() {
-		goterm.Println("Need to login first")
+		fmt.Println("Need to login first")
 		return nil
 	}
 

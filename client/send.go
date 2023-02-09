@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/buger/goterm"
 )
 
 type sendArgs struct {
@@ -19,12 +19,12 @@ func init() {
 
 func (s *sendArgs) Execute(args []string) error {
 	if len(s.Args.Message) <= 0 {
-		goterm.Println("Message cannot be empty")
+		fmt.Println("Message cannot be empty")
 		return nil
 	}
 
 	if !inChatroom() {
-		goterm.Println("Not in a chatroom")
+		fmt.Println("Not in a chatroom")
 		return nil
 	}
 

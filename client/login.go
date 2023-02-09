@@ -1,8 +1,9 @@
 package client
 
 import (
+	"fmt"
+
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/buger/goterm"
 )
 
 type loginArgs struct {
@@ -23,6 +24,6 @@ func (l *loginArgs) Execute(args []string) error {
 		Username: l.Args.Username,
 	}
 
-	goterm.Printf("Logged in as user `%s`\n", client.user.Username)
+	fmt.Printf("Logged in as user `%s`\n", client.user.Username)
 	return nil
 }
