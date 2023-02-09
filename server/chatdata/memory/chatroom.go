@@ -81,3 +81,7 @@ func (c *memoryChatroom) GetLatestMessages(n int) []chatdata.Message {
 
 	return c.messages[index:]
 }
+
+func (c *memoryChatroom) GetAllMessages() []chatdata.Message {
+	return c.messages
+}

@@ -26,6 +26,7 @@ type Chatroom interface {
 
 	AppendMessage(*pb.User, string)
 	GetLatestMessages(int) []Message
+	GetAllMessages() []Message
 }
 
 type Subscription interface {

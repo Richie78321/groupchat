@@ -34,14 +34,9 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
-	latestMessagesPb := make([]*pb.Message, 0)
-	for _, m := range chatroom.GetLatestMessages(latestMessageWindow) {
-		latestMessagesPb = append(latestMessagesPb, chatdata.MessageToPb(m))
-	}
-
 	return stream.Send(&pb.ChatroomSubscriptionUpdate{
 		Participants:   chatroom.Users(),
-		LatestMessages: latestMessagesPb,
+		LatestMessages: chatdata.MessageListToPb(chatroom.GetLatestMessages(latestMessageWindow)),
 	})
 }
 
@@ -140,6 +135,23 @@ func (s *chatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb
 	}
 
 	return sendChatHelper(ctx, chatroom, req)
+}
+
+func (s *chatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryRequest) (*pb.MessageHistoryResponse, error) {
+	// Get the chatroom if it exists
+	s.manager.GetLock().Lock()
+	chatroom, err := s.getChatroomOrFail(req.Chatroom)
+	s.manager.GetLock().Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	chatroom.GetLock().Lock()
+	defer chatroom.GetLock().Unlock()
+
+	return &pb.MessageHistoryResponse{
+		Messages: chatdata.MessageListToPb(chatroom.GetAllMessages()),
+	}, nil
 }
 
 func Start(address string) error {
