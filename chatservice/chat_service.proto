@@ -38,7 +38,8 @@ message SendChatResponse {}
 message LikeChatRequest {
     User self = 1;
     string message_uuid = 2;
-    bool like = 3;
+    Chatroom chatroom = 3;
+    bool like = 4;
 }
 message LikeChatResponse {}
 
