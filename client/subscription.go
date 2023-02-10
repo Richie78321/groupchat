@@ -38,8 +38,7 @@ func (s *subscription) showLatestMessages(messages []*pb.Message) {
 	}
 
 	for i, m := range s.latestMessages {
-		// TODO(richie): Add likers when they are implemented
-		fmt.Printf("%d. %s: %s\n", i+1, m.Author.Username, m.Body)
+		fmt.Printf("%d. %s: %s [Likers: %d]\n", i+1, m.Author.Username, m.Body, len(m.Likers))
 	}
 }
 

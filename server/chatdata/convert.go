@@ -16,7 +16,6 @@ func MessageToPb(m Message) *pb.Message {
 		Uuid:   m.Id().String(),
 		Author: m.Author(),
 		Body:   m.Body(),
-		// TODO(richie): Update when liking is implemented
-		Likers: []*pb.User{},
+		Likers: m.Likers(),
 	}
 }
