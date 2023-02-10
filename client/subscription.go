@@ -59,7 +59,7 @@ func (s *subscription) printUpdate(update *pb.ChatroomSubscriptionUpdate) {
 		usernameMap[user.Username] = struct{}{}
 	}
 	usernames := []string{}
-	for username, _ := range usernameMap {
+	for username := range usernameMap {
 		usernames = append(usernames, username)
 	}
 	// Sort the usernames for consistency (key order is not guaranteed when

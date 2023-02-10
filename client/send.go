@@ -28,7 +28,7 @@ func (s *sendArgs) Execute(args []string) error {
 		return nil
 	}
 
-	_, err := client.pbClient.SendChat(context.Background(), &pb.SendChatRequest{
+	_, err := client.connection.pbClient.SendChat(context.Background(), &pb.SendChatRequest{
 		Self:     client.user,
 		Body:     s.Args.Message,
 		Chatroom: client.subscription.chatroom,

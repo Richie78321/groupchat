@@ -31,7 +31,8 @@ func (c *connectArgs) Execute(args []string) error {
 		return err
 	}
 
-	client.pbClient = pb.NewChatServiceClient(conn)
+	client.connection.grpc = conn
+	client.connection.pbClient = pb.NewChatServiceClient(conn)
 	fmt.Printf("Connected to `%s`\n", c.Args.Address)
 	return nil
 }

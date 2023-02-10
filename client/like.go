@@ -24,7 +24,7 @@ func likeOrUnlike(messageId int, like bool) error {
 		return nil
 	}
 
-	_, err := client.pbClient.LikeChat(context.Background(), &pb.LikeChatRequest{
+	_, err := client.connection.pbClient.LikeChat(context.Background(), &pb.LikeChatRequest{
 		Self:        client.user,
 		MessageUuid: client.subscription.latestMessages[shiftedId].Uuid,
 		Chatroom:    client.subscription.chatroom,

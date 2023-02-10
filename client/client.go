@@ -11,13 +11,19 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/google/shlex"
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc"
 )
 
 var client struct {
 	printLock    sync.Mutex
-	pbClient     pb.ChatServiceClient
 	user         *pb.User
 	subscription *subscription
+	connection   struct {
+		grpc     *grpc.ClientConn
+		pbClient pb.ChatServiceClient
+	}
+
+	shouldExit bool
 }
 
 func loggedIn() bool {
@@ -25,7 +31,7 @@ func loggedIn() bool {
 }
 
 func connected() bool {
-	return client.pbClient != nil
+	return client.connection.pbClient != nil
 }
 
 func inChatroom() bool {
@@ -49,6 +55,8 @@ func printSeparator() {
 }
 
 func Start() {
+	client.shouldExit = false
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		splitArgs, err := splitArgs(scanner.Text())
@@ -65,9 +73,18 @@ func Start() {
 
 		printSeparator()
 		client.printLock.Unlock()
+
+		if client.shouldExit {
+			break
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("%v", err)
+	}
+
+	// Clean up any open connections
+	if client.connection.grpc != nil {
+		client.connection.grpc.Close()
 	}
 }

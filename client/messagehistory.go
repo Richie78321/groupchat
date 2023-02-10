@@ -19,7 +19,7 @@ func (h *historyArgs) Execute(args []string) error {
 		return nil
 	}
 
-	response, err := client.pbClient.MessageHistory(context.Background(), &pb.MessageHistoryRequest{
+	response, err := client.connection.pbClient.MessageHistory(context.Background(), &pb.MessageHistoryRequest{
 		Chatroom: client.subscription.chatroom,
 	})
 	if err != nil {

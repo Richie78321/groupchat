@@ -32,7 +32,7 @@ func (j *joinArgs) Execute(args []string) error {
 	endSubscription()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	stream, err := client.pbClient.SubscribeChatroom(ctx, &pb.SubscribeChatroomRequest{
+	stream, err := client.connection.pbClient.SubscribeChatroom(ctx, &pb.SubscribeChatroomRequest{
 		Self: client.user,
 		Chatroom: &pb.Chatroom{
 			Name: j.Args.Group,
