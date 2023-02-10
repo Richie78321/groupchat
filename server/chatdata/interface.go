@@ -42,4 +42,8 @@ type Message interface {
 	Id() uuid.UUID
 	Author() *pb.User
 	Body() string
+
+	Likers() []*pb.User
+	Like(*pb.User)
+	Unlike(*pb.User)
 }
