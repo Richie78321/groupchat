@@ -32,9 +32,11 @@ func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream 
 	// Trigger this subscription to send an initial update
 	subscription.SignalUpdate()
 
-	// Add this subscription to the chatroom's current subscriptions
 	chatroom.GetLock().Lock()
+	// Add this subscription to the chatroom's current subscriptions
 	chatroom.AddSubscription(subscription)
+	// Signal the subscriptions because a new user has logged into the chatroom
+	chatroom.SignalSubscriptions()
 	chatroom.GetLock().Unlock()
 	log.Printf("Added subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
 
@@ -42,6 +44,8 @@ func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream 
 	defer func() {
 		chatroom.GetLock().Lock()
 		chatroom.RemoveSubscription(subscription.Id())
+		// Signal the subscriptions because a user has logged out of the chatroom
+		chatroom.SignalSubscriptions()
 		chatroom.GetLock().Unlock()
 		log.Printf("Removed subscription: user=%s, uuid=%v\n", req.Self.Username, subscription.Id())
 	}()

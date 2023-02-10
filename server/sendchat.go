@@ -26,5 +26,8 @@ func (s *chatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb
 	// Create the message and append it to the chatroom
 	chatroom.AppendMessage(req.Self, req.Body)
 
+	// A new message has been added, so signal the subscribers
+	chatroom.SignalSubscriptions()
+
 	return &pb.SendChatResponse{}, nil
 }

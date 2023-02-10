@@ -44,15 +44,11 @@ func (c *memoryChatroom) SignalSubscriptions() {
 }
 
 func (c *memoryChatroom) AddSubscription(s chatdata.Subscription) {
-	// Order matters here: we want to signal only the existing subscriptions, not the new one
-	c.SignalSubscriptions()
 	c.subscriptions[s.Id()] = s
 }
 
 func (c *memoryChatroom) RemoveSubscription(u uuid.UUID) {
-	// Order matters here: we want to signal only the remaining subscriptions
 	delete(c.subscriptions, u)
-	c.SignalSubscriptions()
 }
 
 func (c *memoryChatroom) Users() (users []*pb.User) {
@@ -68,9 +64,6 @@ func (c *memoryChatroom) AppendMessage(author *pb.User, body string) {
 
 	c.messages = append(c.messages, newMessage)
 	c.messagesByUuid[newMessage.Id()] = newMessage
-
-	// A new message has been added, so signal the subscribers
-	c.SignalSubscriptions()
 }
 
 func (c *memoryChatroom) LatestMessages(n int) []chatdata.Message {
