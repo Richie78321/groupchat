@@ -15,9 +15,10 @@ type memoryMessage struct {
 
 func newMemoryMessage(author *pb.User, body string) *memoryMessage {
 	return &memoryMessage{
-		id:     uuid.New(),
-		author: author,
-		body:   body,
+		id:               uuid.New(),
+		author:           author,
+		body:             body,
+		likersByUsername: make(map[string]*pb.User),
 	}
 }
 
