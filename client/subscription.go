@@ -38,7 +38,12 @@ func (s *subscription) showLatestMessages(messages []*pb.Message) {
 	}
 
 	for i, m := range s.latestMessages {
-		fmt.Printf("%d. %s: %s [Likers: %d]\n", i+1, m.Author.Username, m.Body, len(m.Likers))
+		likersStr := ""
+		if len(m.Likers) > 0 {
+			likersStr = fmt.Sprintf(" [Likers: %d]", len(m.Likers))
+		}
+
+		fmt.Printf("%d. %s: %s%s\n", i+1, m.Author.Username, m.Body, likersStr)
 	}
 }
 
