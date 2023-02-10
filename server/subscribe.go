@@ -14,7 +14,7 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 
 	return stream.Send(&pb.ChatroomSubscriptionUpdate{
 		Participants:   chatroom.Users(),
-		LatestMessages: chatdata.MessageListToPb(chatroom.GetLatestMessages(latestMessageWindow)),
+		LatestMessages: chatdata.MessageListToPb(chatroom.LatestMessages(latestMessageWindow)),
 	})
 }
 

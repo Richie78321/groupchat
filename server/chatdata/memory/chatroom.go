@@ -73,7 +73,7 @@ func (c *memoryChatroom) AppendMessage(author *pb.User, body string) {
 	c.SignalSubscriptions()
 }
 
-func (c *memoryChatroom) GetLatestMessages(n int) []chatdata.Message {
+func (c *memoryChatroom) LatestMessages(n int) []chatdata.Message {
 	index := len(c.messages) - n
 	if index <= 0 {
 		return c.messages
@@ -82,6 +82,11 @@ func (c *memoryChatroom) GetLatestMessages(n int) []chatdata.Message {
 	return c.messages[index:]
 }
 
-func (c *memoryChatroom) GetAllMessages() []chatdata.Message {
+func (c *memoryChatroom) AllMessages() []chatdata.Message {
 	return c.messages
+}
+
+func (c *memoryChatroom) MessageById(u uuid.UUID) (chatdata.Message, bool) {
+	m, ok := c.messagesByUuid[u]
+	return m, ok
 }

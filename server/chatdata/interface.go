@@ -25,8 +25,9 @@ type Chatroom interface {
 	Users() []*pb.User
 
 	AppendMessage(*pb.User, string)
-	GetLatestMessages(int) []Message
-	GetAllMessages() []Message
+	LatestMessages(int) []Message
+	AllMessages() []Message
+	MessageById(uuid.UUID) (Message, bool)
 }
 
 type Subscription interface {
