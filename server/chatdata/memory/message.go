@@ -36,7 +36,7 @@ func (m *memoryMessage) Body() string {
 
 func (m *memoryMessage) Likers() []*pb.User {
 	likers := make([]*pb.User, 0, len(m.likersByUsername))
-	for _, user := range likers {
+	for _, user := range m.likersByUsername {
 		likers = append(likers, user)
 	}
 
