@@ -34,6 +34,8 @@ func connected() bool {
 	return client.connection.pbClient != nil
 }
 
+// inChatroom subsumes loggedIn() and connected(), as those are prerequisites
+// for being subscribed to a chatroom.
 func inChatroom() bool {
 	return client.subscription != nil
 }
@@ -64,8 +66,12 @@ func Start() {
 			log.Fatalf("%v", err)
 		}
 
+		// Before running a command, obtain the printLock to avoid
+		// concurrent writes to the console.
 		client.printLock.Lock()
 
+		// ParseArgs parses the command and executes the respective Execute() handler.
+		// Any errors returned from handlers are returned here.
 		_, err = parser.ParseArgs(splitArgs)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)

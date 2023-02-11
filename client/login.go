@@ -17,7 +17,7 @@ func init() {
 }
 
 func (l *loginArgs) Execute(args []string) error {
-	// Existing subscription ends when logging in as a new user
+	// End any existing subscriptions when changing login
 	endSubscription()
 
 	client.user = &pb.User{

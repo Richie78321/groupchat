@@ -26,6 +26,9 @@ func (c *connectArgs) Execute(args []string) error {
 	}
 
 	fmt.Println("Connecting...")
+	// grpc.WithBlock() is used to avoid returning from the handler before the connection has been
+	// fully established. To avoid blocking indefinitely on an invalid connection, grpc.WithTimeout()
+	// is also used.
 	conn, err := grpc.Dial(c.Args.Address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithTimeout(10*time.Second))
 	if err != nil {
 		return err

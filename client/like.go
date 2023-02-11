@@ -7,6 +7,8 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
+// likeOrUnlike is a generic handler for both liking and un-liking a message,
+// because their logic is very similar.
 func likeOrUnlike(messageId int, like bool) error {
 	if !inChatroom() {
 		fmt.Println("Not in a chatroom")

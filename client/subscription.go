@@ -79,6 +79,7 @@ func (s *subscription) ingestUpdates() {
 			break
 		}
 		if err != nil {
+			// For now, we assume that a server failure is unrecoverable.
 			log.Fatalf("%v", err)
 		}
 
@@ -91,7 +92,7 @@ func endSubscription() {
 		return
 	}
 
-	fmt.Printf("Ending existing subscription to `%s`\n", client.subscription.chatroom.Name)
+	fmt.Printf("Ending subscription to `%s`\n", client.subscription.chatroom.Name)
 	client.subscription.cancel()
 	client.subscription = nil
 }

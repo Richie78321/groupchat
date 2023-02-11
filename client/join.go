@@ -31,6 +31,7 @@ func (j *joinArgs) Execute(args []string) error {
 	// Existing subscription ends when joining a new chatroom
 	endSubscription()
 
+	// Use a cancellable context so the client can terminate subscriptions.
 	ctx, cancel := context.WithCancel(context.Background())
 	stream, err := client.connection.pbClient.SubscribeChatroom(ctx, &pb.SubscribeChatroomRequest{
 		Self: client.user,
@@ -52,7 +53,7 @@ func (j *joinArgs) Execute(args []string) error {
 		ctx:    ctx,
 	}
 
-	// Spawn a thread to ingest the updates
+	// Spawn a thread to ingest subscription updates
 	go client.subscription.ingestUpdates()
 
 	return nil
