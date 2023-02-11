@@ -7,6 +7,8 @@ import (
 	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
+const latestMessageWindow = 10
+
 // Send an update of the chatroom state over the provided stream.
 func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_SubscribeChatroomServer) error {
 	chatroom.GetLock().Lock()

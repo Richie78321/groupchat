@@ -14,8 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const latestMessageWindow = 10
-
 type chatServer struct {
 	manager chatdata.Manager
 	pb.UnimplementedChatServiceServer
@@ -23,11 +21,12 @@ type chatServer struct {
 
 func newChatServer() *chatServer {
 	return &chatServer{
-		// Assuming a reliable server, we use in-memory data
+		// Assuming a reliable server, we use in-memory data structures
 		manager: memory.NewMemoryManager(),
 	}
 }
 
+// Return a gRPC error if the specified chatroom does not exist.
 func (s *chatServer) getChatroomOrFail(r *pb.Chatroom) (chatdata.Chatroom, error) {
 	chatroom, ok := s.manager.Room(r.Name)
 	if !ok {
