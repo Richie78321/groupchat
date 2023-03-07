@@ -19,6 +19,10 @@ message Message {
     repeated User likers = 4;
 }
 
+message Peer {
+    string id = 1;
+}
+
 message SubscribeChatroomRequest {
     User self = 1;
     Chatroom chatroom = 2;
@@ -50,9 +54,15 @@ message MessageHistoryResponse {
     repeated Message messages = 1;
 }
 
+message ViewPeersRequest {}
+message ViewPeersResponse {
+    repeated Peer peers = 1;
+}
+
 service ChatService {
     rpc subscribe_chatroom(SubscribeChatroomRequest) returns (stream ChatroomSubscriptionUpdate) {}
     rpc send_chat(SendChatRequest) returns (SendChatResponse) {}
     rpc like_chat(LikeChatRequest) returns (LikeChatResponse) {}
     rpc message_history(MessageHistoryRequest) returns (MessageHistoryResponse) {}
+    rpc view_peers(ViewPeersRequest) returns (ViewPeersResponse) {}
 }

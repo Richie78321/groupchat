@@ -5,7 +5,6 @@ option go_package = "github.com/Richie78321/groupchat/chatservice";
 package chatservice;
 
 message SubscribeRequest {}
-
 message SubscriptionUpdate {}
 
 service ReplicationService {
