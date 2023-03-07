@@ -5,10 +5,17 @@ option go_package = "github.com/Richie78321/groupchat/chatservice";
 package chatservice;
 
 message EphemeralState {}
+message Event {
+    string origin_pid = 1;
+    int64 sequence_number = 2;
+    int64 lamport_timestamp = 3;
+    // oneof event {}
+}
 
 message SubscribeRequest {}
 message SubscriptionUpdate {
-    EphemeralState ephemeralState = 1;
+    EphemeralState ephemeral_state = 1;
+    repeated Event events = 2;
 }
 
 service ReplicationService {
