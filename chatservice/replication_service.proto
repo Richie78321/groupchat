@@ -4,8 +4,12 @@ option go_package = "github.com/Richie78321/groupchat/chatservice";
 
 package chatservice;
 
+message EphemeralState {}
+
 message SubscribeRequest {}
-message SubscriptionUpdate {}
+message SubscriptionUpdate {
+    EphemeralState ephemeralState = 1;
+}
 
 service ReplicationService {
     rpc subscribe_updates(SubscribeRequest) returns (stream SubscriptionUpdate) {}
