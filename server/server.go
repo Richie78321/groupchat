@@ -8,6 +8,7 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/Richie78321/groupchat/server/chatdata"
 	"github.com/Richie78321/groupchat/server/chatdata/memory"
+	"github.com/Richie78321/groupchat/server/replication"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -53,7 +54,7 @@ func ensureUserLoggedIn(c chatdata.Chatroom, u *pb.User) error {
 	return status.Errorf(codes.PermissionDenied, "user `%s` is not logged into chatroom `%s`", u.Username, c.RoomName())
 }
 
-func Start(address string) error {
+func Start(id string, address string, peers []replication.ReplicationPeer) error {
 	// We strictly use TCP as the transport for reliable, in-order transfer.
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
