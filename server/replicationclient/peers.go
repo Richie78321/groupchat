@@ -41,6 +41,12 @@ func (m *PeerManager) Events() <-chan *pb.Event {
 	return m.delivered_events
 }
 
+// EphemeralStateHolder is necessary to avoid storing a nil value in atomic.Value when
+// *pb.EphemeralState can sometimes be nil.
+type EphemeralStateHolder struct {
+	state *pb.EphemeralState
+}
+
 type Peer struct {
 	Id             string
 	Addr           string
@@ -60,7 +66,7 @@ func NewPeer(id string, addr string) *Peer {
 func (p *Peer) connect(m *PeerManager) {
 	for {
 		// Reset the state of the peer when retrying the connection
-		p.EphemeralState.Store(nil)
+		p.EphemeralState.Store(&EphemeralStateHolder{state: nil})
 		p.Connected.Store(false)
 
 		stream, err := p.attemptSubscribe()
@@ -118,7 +124,9 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 		log.Printf("Received update from `%s`", p.Id)
 
 		// Update ephemeral state before delivering the event.
-		p.EphemeralState.Store(update.EphemeralState)
+		p.EphemeralState.Store(&EphemeralStateHolder{
+			state: update.EphemeralState,
+		})
 
 		for _, event := range update.Events {
 			m.deliverEvent(event)
