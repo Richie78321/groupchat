@@ -13,11 +13,6 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
-const (
-	connectionTimeout    time.Duration = 10 * time.Second
-	connectionRetryDelay time.Duration = 10 * time.Second
-)
-
 type PeerManager struct {
 	Peers  []*Peer
 	events chan *pb.Event
