@@ -20,22 +20,30 @@ const (
 
 type PeerManager struct {
 	Peers  []*Peer
-	Events chan struct{}
+	events chan *pb.Event
 }
 
 func NewPeerManager(peers []*Peer) *PeerManager {
 	return &PeerManager{
 		Peers:  peers,
-		Events: make(chan struct{}),
+		events: make(chan *pb.Event),
 	}
+}
+
+func (m *PeerManager) deliverEvent(e *pb.Event) {
+	m.events <- e
 }
 
 func (m *PeerManager) ConnectPeers() {
 	// Spawn a thread to manage connections to each peer
 	for _, peer := range m.Peers {
 		// TODO(richie): Potentially use context here to make threads cancellable
-		go peer.connect(m.Events)
+		go peer.connect(m)
 	}
+}
+
+func (m *PeerManager) Events() <-chan *pb.Event {
+	return m.events
 }
 
 type Peer struct {
@@ -54,7 +62,7 @@ func NewPeer(id string, addr string) *Peer {
 	}
 }
 
-func (p *Peer) connect(events chan<- struct{}) {
+func (p *Peer) connect(m *PeerManager) {
 	for {
 		p.EphemeralState.Store(nil)
 		p.Connected.Store(false)
@@ -69,7 +77,7 @@ func (p *Peer) connect(events chan<- struct{}) {
 		log.Printf("Peer subscription to `%s` succeeeded", p.Id)
 		p.Connected.Store(true)
 
-		err = p.readUpdates(stream, events)
+		err = p.readUpdates(stream, m)
 		if err != nil {
 			log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
 			continue
@@ -104,17 +112,20 @@ func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient,
 	return stream, nil
 }
 
-func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, events chan<- struct{}) error {
+func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, m *PeerManager) error {
 	for {
 		update, err := stream.Recv()
 		if err != nil {
 			return err
 		}
 
+		log.Printf("Received update from `%s`", p.Id)
+
 		// Update ephemeral state before passing on the event.
 		p.EphemeralState.Store(update.EphemeralState)
 
-		// TODO(richie): Replace with real updates when they become available.
-		events <- struct{}{}
+		for _, event := range update.Events {
+			m.deliverEvent(event)
+		}
 	}
 }
