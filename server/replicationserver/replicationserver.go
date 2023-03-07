@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/Richie78321/groupchat/server/replication"
+	"github.com/Richie78321/groupchat/server/replicationclient"
 )
 
 type ReplicationServer struct {
@@ -12,16 +12,16 @@ type ReplicationServer struct {
 
 	subscriptions map[*subscription]struct{}
 
-	peerManager *replication.PeerManager
+	peerManager *replicationclient.PeerManager
 	pb.UnimplementedReplicationServiceServer
 }
 
-func (r *ReplicationServer) UpdateSubscriptions() {
+func (r *ReplicationServer) SignalSubscriptions() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	for subscription := range r.subscriptions {
-		subscription.updateSubscription()
+		subscription.signalUpdate()
 	}
 }
 
@@ -33,7 +33,7 @@ func (r *ReplicationServer) removeSubscription(s *subscription) {
 	delete(r.subscriptions, s)
 }
 
-func NewReplicationServer(peerManager *replication.PeerManager) *ReplicationServer {
+func NewReplicationServer(peerManager *replicationclient.PeerManager) *ReplicationServer {
 	return &ReplicationServer{
 		lock:          sync.Mutex{},
 		subscriptions: make(map[*subscription]struct{}),

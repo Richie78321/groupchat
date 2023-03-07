@@ -3,7 +3,7 @@ package chatserver
 import (
 	"github.com/Richie78321/groupchat/server/chatdata"
 	"github.com/Richie78321/groupchat/server/chatdata/memory"
-	"github.com/Richie78321/groupchat/server/replication"
+	"github.com/Richie78321/groupchat/server/replicationclient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -12,11 +12,11 @@ import (
 
 type ChatServer struct {
 	manager     chatdata.Manager
-	peerManager *replication.PeerManager
+	peerManager *replicationclient.PeerManager
 	pb.UnimplementedChatServiceServer
 }
 
-func NewChatServer(peerManager *replication.PeerManager) *ChatServer {
+func NewChatServer(peerManager *replicationclient.PeerManager) *ChatServer {
 	return &ChatServer{
 		// Assuming a reliable server, we use in-memory data structures
 		manager:     memory.NewMemoryManager(),

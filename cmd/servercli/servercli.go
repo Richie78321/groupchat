@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Richie78321/groupchat/server"
-	"github.com/Richie78321/groupchat/server/replication"
+	"github.com/Richie78321/groupchat/server/replicationclient"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -19,15 +19,15 @@ var opts struct {
 	} `positional-args:"yes" required:"yes"`
 }
 
-func peersFromArgs() ([]*replication.Peer, error) {
-	peers := make([]*replication.Peer, 0, len(opts.Peers))
+func peersFromArgs() ([]*replicationclient.Peer, error) {
+	peers := make([]*replicationclient.Peer, 0, len(opts.Peers))
 	for _, peer := range opts.Peers {
 		split := strings.SplitN(peer, ":", 2)
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid peer string `%s`", peer)
 		}
 
-		peers = append(peers, replication.NewPeer(split[0], split[1]))
+		peers = append(peers, replicationclient.NewPeer(split[0], split[1]))
 	}
 
 	return peers, nil

@@ -7,13 +7,13 @@ import (
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/Richie78321/groupchat/server/chatserver"
-	"github.com/Richie78321/groupchat/server/replication"
+	"github.com/Richie78321/groupchat/server/replicationclient"
 	"github.com/Richie78321/groupchat/server/replicationserver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
 
-func Start(id string, address string, peers []*replication.Peer) error {
+func Start(id string, address string, peers []*replicationclient.Peer) error {
 	// We strictly use TCP as the transport for reliable, in-order transfer.
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
@@ -27,7 +27,7 @@ func Start(id string, address string, peers []*replication.Peer) error {
 		Timeout: 30 * time.Second,
 	}))
 
-	peerManager := replication.NewPeerManager(peers)
+	peerManager := replicationclient.NewPeerManager(peers)
 	chatServer := chatserver.NewChatServer(peerManager)
 	replicationServer := replicationserver.NewReplicationServer(peerManager)
 

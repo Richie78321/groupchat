@@ -18,8 +18,15 @@ func newSubscription() *subscription {
 	}
 }
 
-func (s *subscription) updateSubscription() {
-	s.update <- struct{}{}
+func (s *subscription) signalUpdate() {
+	select {
+	case s.update <- struct{}{}:
+	default:
+		// The update channel has a strict buffer size of 1.
+		// If there is already a signal in the subscription update channel,
+		// then we can safely continue because the subscription has already
+		// been signalled to update.
+	}
 }
 
 func sendSubscriptionUpdate(stream pb.ReplicationService_SubscribeUpdatesServer) error {
@@ -49,7 +56,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 	for {
 		select {
 		case <-subscription.update:
-			// When there are new events, send an update over the server stream
+			// When an update signal is made, send an update over the server stream
 			if err := sendSubscriptionUpdate(stream); err != nil {
 				log.Printf("%v", err)
 				return err

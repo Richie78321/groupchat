@@ -1,4 +1,4 @@
-package replication
+package replicationclient
 
 import (
 	"context"
@@ -14,19 +14,19 @@ import (
 )
 
 type PeerManager struct {
-	Peers  []*Peer
-	events chan *pb.Event
+	Peers            []*Peer
+	delivered_events chan *pb.Event
 }
 
 func NewPeerManager(peers []*Peer) *PeerManager {
 	return &PeerManager{
-		Peers:  peers,
-		events: make(chan *pb.Event),
+		Peers:            peers,
+		delivered_events: make(chan *pb.Event),
 	}
 }
 
 func (m *PeerManager) deliverEvent(e *pb.Event) {
-	m.events <- e
+	m.delivered_events <- e
 }
 
 func (m *PeerManager) ConnectPeers() {
@@ -38,7 +38,7 @@ func (m *PeerManager) ConnectPeers() {
 }
 
 func (m *PeerManager) Events() <-chan *pb.Event {
-	return m.events
+	return m.delivered_events
 }
 
 type Peer struct {
@@ -59,6 +59,7 @@ func NewPeer(id string, addr string) *Peer {
 
 func (p *Peer) connect(m *PeerManager) {
 	for {
+		// Reset the state of the peer when retrying the connection
 		p.EphemeralState.Store(nil)
 		p.Connected.Store(false)
 
@@ -116,7 +117,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 
 		log.Printf("Received update from `%s`", p.Id)
 
-		// Update ephemeral state before passing on the event.
+		// Update ephemeral state before delivering the event.
 		p.EphemeralState.Store(update.EphemeralState)
 
 		for _, event := range update.Events {
