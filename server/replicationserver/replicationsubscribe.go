@@ -37,14 +37,14 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 	s.addSubscription(subscription)
 	s.lock.Unlock()
 
-	log.Printf("Peer subscribed")
-
 	// Remove this subscription from the current subscriptions at exit
 	defer func() {
 		s.lock.Lock()
 		s.removeSubscription(subscription)
 		s.lock.Unlock()
 	}()
+
+	log.Printf("Peer subscribed")
 
 	for {
 		select {
