@@ -13,16 +13,16 @@ import (
 var opts struct {
 	Address string   `long:"address" description:"The server address" default:"localhost"`
 	Port    int      `long:"port" description:"The server port" default:"3000"`
-	Peers   []string `long:"peer" short:"p" description:"Peer server in the format <id>;<address>. This can be called multiple times."`
+	Peers   []string `long:"peer" short:"p" description:"Peer server in the format <id>:<address>. This can be called multiple times."`
 	Args    struct {
 		Id string `description:"the server's ID"`
 	} `positional-args:"yes" required:"yes"`
 }
 
-func peersFromArgs() ([]replication.ReplicationPeer, error) {
-	peers := make([]replication.ReplicationPeer, 0, len(opts.Peers))
+func peersFromArgs() ([]replication.Peer, error) {
+	peers := make([]replication.Peer, 0, len(opts.Peers))
 	for _, peer := range opts.Peers {
-		split := strings.SplitN(peer, ";", 2)
+		split := strings.SplitN(peer, ":", 2)
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid peer string `%s`", peer)
 		}
