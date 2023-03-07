@@ -16,12 +16,12 @@ type ReplicationServer struct {
 	pb.UnimplementedReplicationServiceServer
 }
 
-func (r *ReplicationServer) SignalSubscriptions() {
+func (r *ReplicationServer) BroadcastEvents(events []*pb.Event) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	for subscription := range r.subscriptions {
-		subscription.signalUpdate()
+		subscription.broadcastEvents(events)
 	}
 }
 

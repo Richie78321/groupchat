@@ -6,33 +6,27 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
+const eventBufferSize = 100
+
 type subscription struct {
-	// A channel for signalling updates. Needs a strict buffer size of 1.
-	update chan struct{}
+	// A channel of events to broadcast.
+	eventsToBroadcast chan []*pb.Event
 }
 
 func newSubscription() *subscription {
 	return &subscription{
-		// The buffer size is strictly 1 to ensure proper signalling behavior.
-		update: make(chan struct{}, 1),
+		eventsToBroadcast: make(chan []*pb.Event, eventBufferSize),
 	}
 }
 
-func (s *subscription) signalUpdate() {
-	select {
-	case s.update <- struct{}{}:
-	default:
-		// The update channel has a strict buffer size of 1.
-		// If there is already a signal in the subscription update channel,
-		// then we can safely continue because the subscription has already
-		// been signalled to update.
-	}
+func (s *subscription) broadcastEvents(events []*pb.Event) {
+	s.eventsToBroadcast <- events
 }
 
-func sendSubscriptionUpdate(stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
 		EphemeralState: &pb.EphemeralState{},
-		Events:         make([]*pb.Event, 0),
+		Events:         events,
 	})
 }
 
@@ -57,9 +51,9 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 
 	for {
 		select {
-		case <-subscription.update:
-			// When an update signal is made, send an update over the server stream
-			if err := sendSubscriptionUpdate(stream); err != nil {
+		case events := <-subscription.eventsToBroadcast:
+			// When new events are available, send a subscription update
+			if err := sendSubscriptionUpdate(events, stream); err != nil {
 				log.Printf("%v", err)
 				return err
 			}
