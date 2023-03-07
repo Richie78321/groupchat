@@ -25,6 +25,7 @@ func (s *subscription) broadcastEvents(events []*pb.Event) {
 
 func sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
+		// TODO(richie): Send a real ephemeral state here
 		EphemeralState: &pb.EphemeralState{},
 		Events:         events,
 	})
