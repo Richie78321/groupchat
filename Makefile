@@ -1,7 +1,7 @@
 protoc:
 	protoc --go_out=. --go_opt=paths=source_relative \
 	--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	chatservice/chat_service.proto
+	chatservice/*.proto
 
 servercli:
 	go build -o bin/ cmd/servercli/servercli.go

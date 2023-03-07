@@ -1,4 +1,4 @@
-package server
+package chatserver
 
 import (
 	"log"
@@ -20,7 +20,7 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 	})
 }
 
-func (s *chatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream pb.ChatService_SubscribeChatroomServer) error {
+func (s *ChatServer) SubscribeChatroom(req *pb.SubscribeChatroomRequest, stream pb.ChatService_SubscribeChatroomServer) error {
 	// Get or create the requested chatroom
 	s.manager.GetLock().Lock()
 	chatroom, ok := s.manager.Room(req.Chatroom.Name)

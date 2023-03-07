@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "github.com/Richie78321/groupchat/chatservice";
+
+package chatservice;
+
+message EphemeralState {}
+message Event {
+    string chatroom_id = 1;
+    string origin_pid = 2;
+    int64 sequence_number = 3;
+    int64 lamport_timestamp = 4;
+    // oneof event {}
+}
+
+message SubscribeRequest {}
+message SubscriptionUpdate {
+    EphemeralState ephemeral_state = 1;
+    repeated Event events = 2;
+}
+
+service ReplicationService {
+    rpc subscribe_updates(SubscribeRequest) returns (stream SubscriptionUpdate) {}
+}

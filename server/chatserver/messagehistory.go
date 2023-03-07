@@ -1,4 +1,4 @@
-package server
+package chatserver
 
 import (
 	pb "github.com/Richie78321/groupchat/chatservice"
@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *chatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryRequest) (*pb.MessageHistoryResponse, error) {
+func (s *ChatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryRequest) (*pb.MessageHistoryResponse, error) {
 	// Get the chatroom if it exists
 	s.manager.GetLock().Lock()
 	chatroom, err := s.getChatroomOrFail(req.Chatroom)
