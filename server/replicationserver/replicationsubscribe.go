@@ -7,21 +7,22 @@ import (
 )
 
 type subscription struct {
-	events chan []*pb.Event
+	// A channel for signalling updates. Needs a strict buffer size of 1.
+	update chan struct{}
 }
 
 func newSubscription() *subscription {
 	return &subscription{
-		events: make(chan []*pb.Event),
+		// The buffer size is strictly 1 to ensure proper signalling behavior.
+		update: make(chan struct{}, 1),
 	}
 }
 
-func (s *subscription) broadcastEvents(events []*pb.Event) {
-	// Place the events on the events channel to trigger a subscription update
-	s.events <- events
+func (s *subscription) updateSubscription() {
+	s.update <- struct{}{}
 }
 
-func sendSubscriptionUpdate(newEvents []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func sendSubscriptionUpdate(stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
 		EphemeralState: &pb.EphemeralState{},
 		Events:         make([]*pb.Event, 0),
@@ -47,9 +48,9 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 
 	for {
 		select {
-		case newEvents := <-subscription.events:
+		case <-subscription.update:
 			// When there are new events, send an update over the server stream
-			if err := sendSubscriptionUpdate(newEvents, stream); err != nil {
+			if err := sendSubscriptionUpdate(stream); err != nil {
 				log.Printf("%v", err)
 				return err
 			}
