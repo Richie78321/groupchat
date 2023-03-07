@@ -1,4 +1,4 @@
-package server
+package chatserver
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *chatServer) LikeChat(ctx context.Context, req *pb.LikeChatRequest) (*pb.LikeChatResponse, error) {
+func (s *ChatServer) LikeChat(ctx context.Context, req *pb.LikeChatRequest) (*pb.LikeChatResponse, error) {
 	// Ensure the message UUID is valid
 	messageUuid, err := uuid.Parse(req.MessageUuid)
 	if err != nil {

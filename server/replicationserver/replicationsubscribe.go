@@ -1,4 +1,4 @@
-package server
+package replicationserver
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
-func (s *chatServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	// TODO(richie): Update this to something meaningful
 	log.Printf("Peer subscribed")
 	time.Sleep(10 * time.Hour)

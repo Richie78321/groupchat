@@ -1,11 +1,11 @@
-package server
+package chatserver
 
 import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"golang.org/x/net/context"
 )
 
-func (s *chatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
+func (s *ChatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb.SendChatResponse, error) {
 	// Get the chatroom if it exists
 	s.manager.GetLock().Lock()
 	chatroom, err := s.getChatroomOrFail(req.Chatroom)

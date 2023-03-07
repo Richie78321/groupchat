@@ -22,14 +22,14 @@ type PeerManager struct {
 	Events chan struct{}
 }
 
-func NewPeerManager(peers []*Peer) PeerManager {
-	return PeerManager{
+func NewPeerManager(peers []*Peer) *PeerManager {
+	return &PeerManager{
 		Peers:  peers,
 		Events: make(chan struct{}),
 	}
 }
 
-func (m PeerManager) ConnectPeers() {
+func (m *PeerManager) ConnectPeers() {
 	// Spawn a thread to manage connections to each peer
 	for _, peer := range m.Peers {
 		// TODO(richie): Potentially use context here to make threads cancellable
