@@ -20,7 +20,7 @@ func (r *ReplicationServer) BroadcastEvents(events []*pb.Event) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	for subscription, _ := range r.subscriptions {
+	for subscription := range r.subscriptions {
 		subscription.broadcastEvents(events)
 	}
 }
