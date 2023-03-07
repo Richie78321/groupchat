@@ -18,11 +18,11 @@ const (
 )
 
 type PeerManager struct {
-	Peers  []Peer
+	Peers  []*Peer
 	Events chan struct{}
 }
 
-func NewPeerManager(peers []Peer) PeerManager {
+func NewPeerManager(peers []*Peer) PeerManager {
 	return PeerManager{
 		Peers:  peers,
 		Events: make(chan struct{}),
@@ -43,15 +43,15 @@ type Peer struct {
 	Connected atomic.Bool
 }
 
-func NewPeer(id string, addr string) Peer {
-	return Peer{
+func NewPeer(id string, addr string) *Peer {
+	return &Peer{
 		Id:        id,
 		Addr:      addr,
 		Connected: atomic.Bool{},
 	}
 }
 
-func (p Peer) connect(events chan<- struct{}) {
+func (p *Peer) connect(events chan<- struct{}) {
 	for {
 		p.Connected.Store(false)
 
@@ -73,7 +73,7 @@ func (p Peer) connect(events chan<- struct{}) {
 	}
 }
 
-func (p Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, error) {
+func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, error) {
 	// grpc.WithBlock() is used to avoid returning from the handler before the connection has been
 	// fully established. To avoid blocking indefinitely on an invalid connection, grpc.WithTimeout()
 	// is also used.
@@ -91,7 +91,7 @@ func (p Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, 
 	return stream, nil
 }
 
-func (p Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, events chan<- struct{}) error {
+func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, events chan<- struct{}) error {
 	for {
 		_, err := stream.Recv()
 		if err != nil {

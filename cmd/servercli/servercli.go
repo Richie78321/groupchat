@@ -19,8 +19,8 @@ var opts struct {
 	} `positional-args:"yes" required:"yes"`
 }
 
-func peersFromArgs() ([]replication.Peer, error) {
-	peers := make([]replication.Peer, 0, len(opts.Peers))
+func peersFromArgs() ([]*replication.Peer, error) {
+	peers := make([]*replication.Peer, 0, len(opts.Peers))
 	for _, peer := range opts.Peers {
 		split := strings.SplitN(peer, ":", 2)
 		if len(split) != 2 {

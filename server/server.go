@@ -57,7 +57,7 @@ func ensureUserLoggedIn(c chatdata.Chatroom, u *pb.User) error {
 	return status.Errorf(codes.PermissionDenied, "user `%s` is not logged into chatroom `%s`", u.Username, c.RoomName())
 }
 
-func Start(id string, address string, peers []replication.Peer) error {
+func Start(id string, address string, peers []*replication.Peer) error {
 	// We strictly use TCP as the transport for reliable, in-order transfer.
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
