@@ -39,21 +39,24 @@ func (m *PeerManager) ConnectPeers() {
 }
 
 type Peer struct {
-	Id        string
-	Addr      string
-	Connected atomic.Bool
+	Id             string
+	Addr           string
+	Connected      atomic.Bool
+	EphemeralState atomic.Value
 }
 
 func NewPeer(id string, addr string) *Peer {
 	return &Peer{
-		Id:        id,
-		Addr:      addr,
-		Connected: atomic.Bool{},
+		Id:             id,
+		Addr:           addr,
+		Connected:      atomic.Bool{},
+		EphemeralState: atomic.Value{},
 	}
 }
 
 func (p *Peer) connect(events chan<- struct{}) {
 	for {
+		p.EphemeralState.Store(nil)
 		p.Connected.Store(false)
 
 		stream, err := p.attemptSubscribe()
@@ -103,10 +106,13 @@ func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient,
 
 func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, events chan<- struct{}) error {
 	for {
-		_, err := stream.Recv()
+		update, err := stream.Recv()
 		if err != nil {
 			return err
 		}
+
+		// Update ephemeral state before passing on the event.
+		p.EphemeralState.Store(update.EphemeralState)
 
 		// TODO(richie): Replace with real updates when they become available.
 		events <- struct{}{}
