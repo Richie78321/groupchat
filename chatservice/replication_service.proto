@@ -6,9 +6,10 @@ package chatservice;
 
 message EphemeralState {}
 message Event {
-    string origin_pid = 1;
-    int64 sequence_number = 2;
-    int64 lamport_timestamp = 3;
+    string chatroom_id = 1;
+    string origin_pid = 2;
+    int64 sequence_number = 3;
+    int64 lamport_timestamp = 4;
     // oneof event {}
 }
 
