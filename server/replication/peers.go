@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
@@ -74,10 +75,19 @@ func (p *Peer) connect(events chan<- struct{}) {
 }
 
 func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, error) {
-	// grpc.WithBlock() is used to avoid returning from the handler before the connection has been
-	// fully established. To avoid blocking indefinitely on an invalid connection, grpc.WithTimeout()
-	// is also used.
-	conn, err := grpc.Dial(p.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(), grpc.WithTimeout(connectionTimeout))
+	conn, err := grpc.Dial(
+		p.Addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		// grpc.WithBlock() is used to avoid returning from the handler before the connection has been
+		// fully established.
+		grpc.WithBlock(),
+		// Keepalive will disconnect an unresponsive server after approximately 1 minute (Time + Timeout).
+		// This means we have a maximum peer connected status staleness of around 1 minute.
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:    30 * time.Second,
+			Timeout: 30 * time.Second,
+		}),
+	)
 	if err != nil {
 		return nil, err
 	}
