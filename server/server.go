@@ -16,14 +16,17 @@ import (
 )
 
 type chatServer struct {
-	manager chatdata.Manager
+	manager     chatdata.Manager
+	peerManager replication.PeerManager
 	pb.UnimplementedChatServiceServer
+	pb.UnimplementedReplicationServiceServer
 }
 
-func newChatServer() *chatServer {
+func newChatServer(peerManager replication.PeerManager) *chatServer {
 	return &chatServer{
 		// Assuming a reliable server, we use in-memory data structures
-		manager: memory.NewMemoryManager(),
+		manager:     memory.NewMemoryManager(),
+		peerManager: peerManager,
 	}
 }
 
@@ -54,7 +57,7 @@ func ensureUserLoggedIn(c chatdata.Chatroom, u *pb.User) error {
 	return status.Errorf(codes.PermissionDenied, "user `%s` is not logged into chatroom `%s`", u.Username, c.RoomName())
 }
 
-func Start(id string, address string, peers []replication.ReplicationPeer) error {
+func Start(id string, address string, peers []replication.Peer) error {
 	// We strictly use TCP as the transport for reliable, in-order transfer.
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
@@ -68,9 +71,13 @@ func Start(id string, address string, peers []replication.ReplicationPeer) error
 		Timeout: 30 * time.Second,
 	}))
 
-	pb.RegisterChatServiceServer(grpcServer, newChatServer())
+	peerManager := replication.NewPeerManager(peers)
+	chatServer := newChatServer(peerManager)
+	pb.RegisterChatServiceServer(grpcServer, chatServer)
+	pb.RegisterReplicationServiceServer(grpcServer, chatServer)
 
 	log.Printf("Running server on %s...\n", address)
+	peerManager.ConnectPeers()
 	grpcServer.Serve(lis)
 
 	return nil
