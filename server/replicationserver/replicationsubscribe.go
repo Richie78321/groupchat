@@ -51,6 +51,8 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.lock.Unlock()
 	}()
 
+	// TODO(richie): Need to trigger a special initial update that diffs events between the processes. The subscribe request should send a process event sequence number vector.
+
 	log.Printf("Peer subscribed")
 
 	for {
