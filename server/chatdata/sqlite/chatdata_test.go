@@ -56,13 +56,19 @@ func TestLoadFromDisk(t *testing.T) {
 	chatdata := makeChatdata(t, pid)
 	sequenceNumber := int64(100)
 	lamportTimestamp := int64(200)
-	testEvent := &Event{
-		Pid:              pid,
-		SequenceNumber:   sequenceNumber,
-		LamportTimestamp: lamportTimestamp,
-	}
-	// Add an event to the database
-	err := chatdata.db.Create(testEvent).Error
+	// Add test events to the database
+	err := chatdata.db.Create([]*Event{
+		{
+			Pid:              pid,
+			SequenceNumber:   sequenceNumber,
+			LamportTimestamp: lamportTimestamp,
+		},
+		{
+			Pid:              "notserver1",
+			SequenceNumber:   3000,
+			LamportTimestamp: 4000,
+		},
+	}).Error
 	assert.NoError(t, err)
 	// Reset the sequence number and LTS
 	chatdata.nextSequenceNumber = 0
