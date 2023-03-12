@@ -48,7 +48,25 @@ func TestIgnoreDuplicates(t *testing.T) {
 }
 
 func TestLTSUpdated(t *testing.T) {
+	chatdata := makeChatdata(t, "server1")
+	lamportTimestamp := int64(100)
 
+	_, err := chatdata.ConsumeEvent(&pb.Event{
+		Pid:              "somepid",
+		SequenceNumber:   0,
+		LamportTimestamp: lamportTimestamp,
+		Event: &pb.Event_MessageAppend{
+			MessageAppend: &pb.MessageAppend{
+				ChatroomId:  "chatroom",
+				MessageUuid: "messageid",
+				AuthorId:    "authorid",
+				Body:        "message",
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	assert.Equal(t, lamportTimestamp+1, chatdata.nextLamportTimestamp)
 }
 
 func TestLoadFromDisk(t *testing.T) {
