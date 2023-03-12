@@ -65,6 +65,7 @@ func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 func (c *SqliteChatdata) loadFromDisk() error {
 	// Load the next sequence number from disk.
 	selectedEvent := &Event{}
+	// We are only concerned with events that have the server's PID.
 	result := c.db.Order("sequence_number DESC").Where("pid = ?", c.pid).Limit(1).Find(selectedEvent)
 	if result.Error != nil {
 		return result.Error
@@ -74,7 +75,16 @@ func (c *SqliteChatdata) loadFromDisk() error {
 		c.nextSequenceNumber = selectedEvent.SequenceNumber + 1
 	}
 
-	// TODO: Load the Lamport Timestamp
+	// Load the next Lamport Timestamp from disk.
+	selectedEvent = &Event{}
+	result = c.db.Order("lamport_timestamp DESC").Limit(1).Find(selectedEvent)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
+		// Set the next Lamport Timestamp as the current maximum LTS plus 1
+		c.nextLamportTimestamp = selectedEvent.LamportTimestamp + 1
+	}
 
 	return nil
 }

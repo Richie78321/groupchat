@@ -73,13 +73,13 @@ func TestLoadFromDisk(t *testing.T) {
 	pid := "server1"
 	chatdata := makeChatdata(t, pid)
 	sequenceNumber := int64(100)
-	lamportTimestamp := int64(200)
+	maxLamportTimestamp := int64(5000)
 	// Add test events to the database
 	err := chatdata.db.Create([]*Event{
 		{
 			Pid:              pid,
 			SequenceNumber:   sequenceNumber,
-			LamportTimestamp: lamportTimestamp,
+			LamportTimestamp: maxLamportTimestamp,
 		},
 		{
 			Pid:              "notserver1",
@@ -95,4 +95,5 @@ func TestLoadFromDisk(t *testing.T) {
 	chatdata.loadFromDisk()
 
 	assert.Equal(t, sequenceNumber+1, chatdata.nextSequenceNumber)
+	assert.Equal(t, maxLamportTimestamp+1, chatdata.nextLamportTimestamp)
 }
