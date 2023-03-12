@@ -31,11 +31,14 @@ type MessageEvent struct {
 }
 
 type SqliteChatdata struct {
-	Lock sync.Mutex
-	db   *gorm.DB
+	Lock                 sync.Mutex
+	db                   *gorm.DB
+	pid                  string
+	nextSequenceNumber   int64
+	nextLamportTimestamp int64
 }
 
-func NewSqliteChatdata(dbPath string) (*SqliteChatdata, error) {
+func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -45,10 +48,35 @@ func NewSqliteChatdata(dbPath string) (*SqliteChatdata, error) {
 	db.AutoMigrate(&Event{})
 	db.AutoMigrate(&MessageEvent{})
 
-	return &SqliteChatdata{
-		Lock: sync.Mutex{},
-		db:   db,
-	}, nil
+	c := &SqliteChatdata{
+		Lock:                 sync.Mutex{},
+		db:                   db,
+		pid:                  pid,
+		nextSequenceNumber:   0,
+		nextLamportTimestamp: 0,
+	}
+	if err = c.loadFromDisk(); err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func (c *SqliteChatdata) loadFromDisk() error {
+	// Load the next sequence number from disk.
+	selectedEvent := &Event{}
+	result := c.db.Order("sequence_number DESC").Where("pid = ?", c.pid).Limit(1).Find(selectedEvent)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
+		// Set the next sequence number as the current maximum sequence number plus 1
+		c.nextSequenceNumber = selectedEvent.SequenceNumber + 1
+	}
+
+	// TODO: Load the Lamport Timestamp
+
+	return nil
 }
 
 func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
@@ -69,6 +97,12 @@ func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
 		Pid:              event.Pid,
 		SequenceNumber:   event.SequenceNumber,
 		LamportTimestamp: event.LamportTimestamp,
+	}
+
+	// Update this server's Lamport Timestamp if this event has a new maximum timestamp.
+	newLts := dbEvent.LamportTimestamp + 1
+	if c.nextLamportTimestamp < newLts {
+		c.nextLamportTimestamp = newLts
 	}
 
 	switch e := event.Event.(type) {
