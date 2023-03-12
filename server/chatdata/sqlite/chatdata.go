@@ -98,6 +98,12 @@ func (c *SqliteChatdata) loadFromDisk() error {
 	return nil
 }
 
+// ConsumeEvent consumes an event locally. Returns a boolean that is true when
+// the event was ignored.
+//
+// An event is ignored if it has already been consumed, which is represented by
+// an event with the same PID and sequence number (the event's composite primary
+// key) already existing in the database.
 func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
 	c.Lock.Lock()
 	defer c.Lock.Unlock()
