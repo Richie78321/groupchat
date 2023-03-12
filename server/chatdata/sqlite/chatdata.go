@@ -115,24 +115,22 @@ func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
 		c.nextLamportTimestamp = newLts
 	}
 
+	var convertedEvent interface{}
 	switch e := event.Event.(type) {
 	case *pb.Event_MessageAppend:
-		return false, c.consumeMessageAppend(&MessageEvent{
+		convertedEvent = &MessageEvent{
 			ChatroomID:  e.MessageAppend.ChatroomId,
 			MessageID:   e.MessageAppend.MessageUuid,
 			AuthorID:    e.MessageAppend.AuthorId,
 			MessageBody: e.MessageAppend.Body,
 			Event:       dbEvent,
-		})
+		}
 	case *pb.Event_MessageLike:
 		// TODO(richie): Implement
 		return false, nil
 	default:
 		return false, fmt.Errorf("unknown event type: %v", e)
 	}
-}
 
-func (c *SqliteChatdata) consumeMessageAppend(event *MessageEvent) error {
-	// Add the message event to the database
-	return c.db.Create(event).Error
+	return false, c.db.Create(convertedEvent).Error
 }
