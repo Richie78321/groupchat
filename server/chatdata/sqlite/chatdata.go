@@ -30,6 +30,15 @@ type MessageEvent struct {
 	Event       Event `gorm:"polymorphic:Event"`
 }
 
+type LikeEvent struct {
+	ID         int
+	ChatroomID string
+	MessageID  string
+	LikerID    string
+	Like       bool
+	Event      Event `gorm:"polymorphic:Event"`
+}
+
 type SqliteChatdata struct {
 	Lock                 sync.Mutex
 	db                   *gorm.DB
@@ -126,8 +135,12 @@ func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
 			Event:       dbEvent,
 		}
 	case *pb.Event_MessageLike:
-		// TODO(richie): Implement
-		return false, nil
+		convertedEvent = &LikeEvent{
+			ChatroomID: e.MessageLike.ChatroomId,
+			MessageID:  e.MessageLike.MessageUuid,
+			LikerID:    e.MessageLike.LikerId,
+			Like:       e.MessageLike.Like,
+		}
 	default:
 		return false, fmt.Errorf("unknown event type: %v", e)
 	}
