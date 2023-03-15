@@ -29,7 +29,7 @@ func (m *PeerManager) deliverEvent(e *pb.Event) {
 	m.delivered_events <- e
 }
 
-func (m *PeerManager) ConnectPeers() {
+func (m *PeerManager) SpawnPeerThreads() {
 	// Spawn a thread to manage connections to each peer
 	for _, peer := range m.Peers {
 		// TODO(richie): Potentially use context here to make threads cancellable

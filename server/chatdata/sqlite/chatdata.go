@@ -2,12 +2,15 @@ package sqlite
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/replicationclient"
+	"github.com/Richie78321/groupchat/server/replicationserver"
 )
 
 type Event struct {
@@ -96,6 +99,22 @@ func (c *SqliteChatdata) loadFromDisk() error {
 	}
 
 	return nil
+}
+
+func (c *SqliteChatdata) ConsumeEventsFromPeers(client *replicationclient.PeerManager, server *replicationserver.ReplicationServer) {
+	for {
+		newEvent := <-client.Events()
+		ignored, err := c.ConsumeEvent(newEvent)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		if ignored {
+			continue
+		}
+
+		// If the event was not ignored, then broadcast the event to peers.
+		server.BroadcastEvents([]*pb.Event{newEvent})
+	}
 }
 
 // ConsumeEvent consumes an event locally. Returns a boolean that is true when
