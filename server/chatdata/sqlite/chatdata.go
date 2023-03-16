@@ -43,7 +43,7 @@ type LikeEvent struct {
 }
 
 type SqliteChatdata struct {
-	Lock                 sync.Mutex
+	lock                 sync.Mutex
 	db                   *gorm.DB
 	myPid                string
 	nextSequenceNumber   int64
@@ -68,7 +68,7 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 	db.AutoMigrate(&MessageEvent{})
 
 	c := &SqliteChatdata{
-		Lock:                 sync.Mutex{},
+		lock:                 sync.Mutex{},
 		db:                   db,
 		myPid:                myPid,
 		nextSequenceNumber:   0,
@@ -92,7 +92,7 @@ func (c *SqliteChatdata) IncomingEvents() chan<- *pb.Event {
 }
 
 func (c *SqliteChatdata) OutgoingEvents() <-chan *pb.Event {
-	return c.incomingEvents
+	return c.outgoingEvents
 }
 
 func (c *SqliteChatdata) SequenceNumberVector() (chatdata.SequenceNumberVector, error) {
@@ -238,8 +238,8 @@ func (c *SqliteChatdata) consumeNewEvents() {
 // an event with the same PID and sequence number (the event's composite primary
 // key) already existing in the database.
 func (c *SqliteChatdata) consumeEvent(event *pb.Event) (bool, error) {
-	c.Lock.Lock()
-	defer c.Lock.Unlock()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	// Ensure this event has not already been seen by this server.
 	result := c.db.Where("pid = ? AND sequence_number = ?", event.Pid, event.SequenceNumber).Limit(1).Find(&Event{})
@@ -284,5 +284,6 @@ func (c *SqliteChatdata) consumeEvent(event *pb.Event) (bool, error) {
 		return false, fmt.Errorf("unknown event type: %v", e)
 	}
 
+	log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", event.Pid, event.SequenceNumber, event.LamportTimestamp)
 	return false, c.db.Create(convertedEvent).Error
 }
