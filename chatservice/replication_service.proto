@@ -30,7 +30,11 @@ message Event {
     };
 }
 
-message SubscribeRequest {}
+message SubscribeRequest {
+    // The sequence number vector is a map from a process' PID to the next-expected
+    // event sequence number from that process.
+    map<string, int64> sequence_number_vector = 1;
+}
 message SubscriptionUpdate {
     EphemeralState ephemeral_state = 1;
     repeated Event events = 2;
