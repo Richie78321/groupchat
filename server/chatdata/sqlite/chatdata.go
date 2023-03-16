@@ -141,8 +141,50 @@ func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
 }
 
 func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) ([]*pb.Event, error) {
-	// TODO(richie): Implement
-	return nil, nil
+	if vector == nil {
+		vector = make(chatdata.SequenceNumberVector)
+	}
+	// Fill missing PIDs with a next-expected sequence number of 0
+	for _, pid := range c.allPids {
+		if _, ok := vector[pid]; ok {
+			continue
+		}
+		vector[pid] = 0
+	}
+
+	// Get the missing events for every PID
+	eventDiff := make([]*pb.Event, 0)
+	for pid, sequence_number := range vector {
+		events, err := c.sequenceNumberDiff(pid, sequence_number)
+		if err != nil {
+			return nil, err
+		}
+
+		eventDiff = append(eventDiff, events...)
+	}
+
+	return eventDiff, nil
+}
+
+func (c *SqliteChatdata) sequenceNumberDiff(pid string, sequence_number int64) ([]*pb.Event, error) {
+	eventDiff := make([]*pb.Event, 0)
+
+	// Query for MessageAppend events
+	messageEvents := make([]MessageEvent, 0)
+	err := c.db.Model(&MessageEvent{}).Where("pid = ? AND sequence_number >= ?", pid, sequence_number).Find(messageEvents).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, messageEvent := range messageEvents {
+		eventDiff = append(eventDiff, messageEventToEventPb(&messageEvent))
+	}
+
+	// TODO(richie): Finish by also querying for MessageLike events and converting them.
+	// Then initialization is complete. Should then make a test to ensure that initial synchronization works.
+	//
+	// Then need to write a test that shows that updates work.
+
+	return eventDiff, nil
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
