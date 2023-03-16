@@ -77,11 +77,12 @@ func (p *Peer) attemptSubscribe(m *PeerManager) (pb.ReplicationService_Subscribe
 		return nil, err
 	}
 
-	// Retrieve the current sequence number vector. It is okay if this vector becomes
-	// partially out-of-date due to new events, as duplicate events are ignored.
-
 	client := pb.NewReplicationServiceClient(conn)
-	stream, err := client.SubscribeUpdates(context.Background(), &pb.SubscribeRequest{})
+	stream, err := client.SubscribeUpdates(context.Background(), &pb.SubscribeRequest{
+		// Use the current sequence number vector. It is okay if this vector becomes
+		// partially out-of-date due to new events, as duplicate incoming events are ignored.
+		SequenceNumberVector: m.synchronizer.SequenceNumberVector(),
+	})
 	if err != nil {
 		return nil, err
 	}
