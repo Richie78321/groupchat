@@ -41,7 +41,7 @@ func (p *Peer) connect(m *PeerManager) {
 		p.EphemeralState.Store(&EphemeralStateHolder{state: nil})
 		p.Connected.Store(false)
 
-		stream, err := p.attemptSubscribe()
+		stream, err := p.attemptSubscribe(m)
 		if err != nil {
 			log.Printf("Failed to subscribe to `%s`: %v", p.Id, err)
 			continue
