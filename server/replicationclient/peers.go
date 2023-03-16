@@ -59,7 +59,7 @@ func (p *Peer) connect(m *PeerManager) {
 	}
 }
 
-func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, error) {
+func (p *Peer) attemptSubscribe(m *PeerManager) (pb.ReplicationService_SubscribeUpdatesClient, error) {
 	conn, err := grpc.Dial(
 		p.Addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -76,6 +76,9 @@ func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient,
 	if err != nil {
 		return nil, err
 	}
+
+	// Retrieve the current sequence number vector. It is okay if this vector becomes
+	// partially out-of-date due to new events, as duplicate events are ignored.
 
 	client := pb.NewReplicationServiceClient(conn)
 	stream, err := client.SubscribeUpdates(context.Background(), &pb.SubscribeRequest{})
@@ -101,7 +104,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 		})
 
 		for _, event := range update.Events {
-			m.newEvents <- event
+			m.synchronizer.IncomingEvents() <- event
 		}
 	}
 }

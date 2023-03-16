@@ -27,8 +27,8 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 		return err
 	}
 
-	peerManager := replicationclient.NewPeerManager(peers, chatdata.NewEvents())
-	replicationServer := replicationserver.NewReplicationServer(chatdata.EventsToBroadcast())
+	peerManager := replicationclient.NewPeerManager(peers, chatdata)
+	replicationServer := replicationserver.NewReplicationServer(chatdata)
 	// TODO(richie): Need to integrate SqliteChatdata with chatServer
 	chatServer := chatserver.NewChatServer(peerManager)
 

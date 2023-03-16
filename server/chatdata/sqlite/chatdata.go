@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
 type Event struct {
@@ -47,8 +48,8 @@ type SqliteChatdata struct {
 	nextSequenceNumber   int64
 	nextLamportTimestamp int64
 
-	newEvents         chan *pb.Event
-	eventsToBroadcast chan *pb.Event
+	incomingEvents chan *pb.Event
+	outgoingEvents chan *pb.Event
 }
 
 const eventBufferSize = 100
@@ -69,8 +70,8 @@ func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 		pid:                  pid,
 		nextSequenceNumber:   0,
 		nextLamportTimestamp: 0,
-		newEvents:            make(chan *pb.Event, eventBufferSize),
-		eventsToBroadcast:    make(chan *pb.Event, eventBufferSize),
+		incomingEvents:       make(chan *pb.Event, eventBufferSize),
+		outgoingEvents:       make(chan *pb.Event, eventBufferSize),
 	}
 	if err = c.loadFromDisk(); err != nil {
 		return nil, err
@@ -82,12 +83,17 @@ func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 	return c, nil
 }
 
-func (c *SqliteChatdata) NewEvents() chan<- *pb.Event {
-	return c.newEvents
+func (c *SqliteChatdata) IncomingEvents() chan<- *pb.Event {
+	return c.incomingEvents
 }
 
-func (c *SqliteChatdata) EventsToBroadcast() <-chan *pb.Event {
-	return c.newEvents
+func (c *SqliteChatdata) OutgoingEvents() <-chan *pb.Event {
+	return c.incomingEvents
+}
+
+func (c *SqliteChatdata) SequenceNumberVector() chatdata.SequenceNumberVector {
+	// TODO(richie): Implement
+	return nil
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
@@ -120,7 +126,7 @@ func (c *SqliteChatdata) loadFromDisk() error {
 // consumeNewEvents consumes events and broadcasts new events.
 func (c *SqliteChatdata) consumeNewEvents() {
 	for {
-		newEvent := <-c.newEvents
+		newEvent := <-c.incomingEvents
 		ignored, err := c.consumeEvent(newEvent)
 		if err != nil {
 			log.Fatalf("%v", err)
@@ -130,7 +136,7 @@ func (c *SqliteChatdata) consumeNewEvents() {
 		}
 
 		// If the event was not ignored, then broadcast the event to peers.
-		c.eventsToBroadcast <- newEvent
+		c.outgoingEvents <- newEvent
 	}
 }
 

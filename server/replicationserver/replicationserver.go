@@ -4,22 +4,23 @@ import (
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
 type ReplicationServer struct {
 	lock sync.Mutex
 
-	subscriptions     map[*subscription]struct{}
-	eventsToBroadcast <-chan *pb.Event
+	subscriptions map[*subscription]struct{}
+	synchronizer  chatdata.EventSynchronizer
 
 	pb.UnimplementedReplicationServiceServer
 }
 
-func NewReplicationServer(eventsToBroadcast <-chan *pb.Event) *ReplicationServer {
+func NewReplicationServer(synchronizer chatdata.EventSynchronizer) *ReplicationServer {
 	r := &ReplicationServer{
-		lock:              sync.Mutex{},
-		subscriptions:     make(map[*subscription]struct{}),
-		eventsToBroadcast: eventsToBroadcast,
+		lock:          sync.Mutex{},
+		subscriptions: make(map[*subscription]struct{}),
+		synchronizer:  synchronizer,
 	}
 
 	// Spawn a thread to broadcast events to subscriptions
@@ -30,7 +31,7 @@ func NewReplicationServer(eventsToBroadcast <-chan *pb.Event) *ReplicationServer
 
 func (r *ReplicationServer) broadcastEvents() {
 	for {
-		event := <-r.eventsToBroadcast
+		event := <-r.synchronizer.OutgoingEvents()
 
 		r.lock.Lock()
 		for subscription := range r.subscriptions {

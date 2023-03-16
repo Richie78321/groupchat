@@ -1,16 +1,16 @@
 package replicationclient
 
-import pb "github.com/Richie78321/groupchat/chatservice"
+import "github.com/Richie78321/groupchat/server/chatdata"
 
 type PeerManager struct {
-	Peers     []*Peer
-	newEvents chan<- *pb.Event
+	Peers        []*Peer
+	synchronizer chatdata.EventSynchronizer
 }
 
-func NewPeerManager(peers []*Peer, newEvents chan<- *pb.Event) *PeerManager {
+func NewPeerManager(peers []*Peer, synchronizer chatdata.EventSynchronizer) *PeerManager {
 	p := &PeerManager{
-		Peers:     peers,
-		newEvents: newEvents,
+		Peers:        peers,
+		synchronizer: synchronizer,
 	}
 
 	// Spawn threads to manage peer connections

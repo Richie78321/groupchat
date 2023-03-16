@@ -46,12 +46,12 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.lock.Unlock()
 	}()
 
+	log.Printf("Peer subscribed")
+
 	// The initial update must happen strictly after the subscription is registered.
-	// Otherwise events could be lost between the initial update and subscription registration.
+	// Otherwise events could be lost in the time between the initial update and subscription registration.
 
 	// TODO(richie): Need to trigger a special initial update that diffs events between the processes. The subscribe request should send a process event sequence number vector.
-
-	log.Printf("Peer subscribed")
 
 	for {
 		select {
