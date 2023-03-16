@@ -2,7 +2,6 @@ package replicationclient
 
 import (
 	"context"
-	"log"
 	"sync/atomic"
 	"time"
 
@@ -12,34 +11,6 @@ import (
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
-
-type PeerManager struct {
-	Peers            []*Peer
-	delivered_events chan *pb.Event
-}
-
-func NewPeerManager(peers []*Peer) *PeerManager {
-	return &PeerManager{
-		Peers:            peers,
-		delivered_events: make(chan *pb.Event),
-	}
-}
-
-func (m *PeerManager) deliverEvent(e *pb.Event) {
-	m.delivered_events <- e
-}
-
-func (m *PeerManager) ConnectPeers() {
-	// Spawn a thread to manage connections to each peer
-	for _, peer := range m.Peers {
-		// TODO(richie): Potentially use context here to make threads cancellable
-		go peer.connect(m)
-	}
-}
-
-func (m *PeerManager) Events() <-chan *pb.Event {
-	return m.delivered_events
-}
 
 // EphemeralStateHolder is necessary to avoid storing a nil value in atomic.Value when
 // *pb.EphemeralState can sometimes be nil.
@@ -69,25 +40,25 @@ func (p *Peer) connect(m *PeerManager) {
 		p.EphemeralState.Store(&EphemeralStateHolder{state: nil})
 		p.Connected.Store(false)
 
-		stream, err := p.attemptSubscribe()
+		stream, err := p.attemptSubscribe(m)
 		if err != nil {
-			log.Printf("Failed to subscribe to `%s`: %v", p.Id, err)
+			m.log.Printf("Failed to subscribe to `%s`: %v", p.Id, err)
 			continue
 		}
 
 		// The peer is considered connected after successfully establishing an update subscription.
-		log.Printf("Peer subscription to `%s` succeeeded", p.Id)
+		m.log.Printf("Peer subscription to `%s` succeeeded", p.Id)
 		p.Connected.Store(true)
 
 		err = p.readUpdates(stream, m)
 		if err != nil {
-			log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
+			m.log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
 			continue
 		}
 	}
 }
 
-func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient, error) {
+func (p *Peer) attemptSubscribe(m *PeerManager) (pb.ReplicationService_SubscribeUpdatesClient, error) {
 	conn, err := grpc.Dial(
 		p.Addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -105,8 +76,17 @@ func (p *Peer) attemptSubscribe() (pb.ReplicationService_SubscribeUpdatesClient,
 		return nil, err
 	}
 
+	// Use the current sequence number vector. It is okay if this vector becomes
+	// partially out-of-date due to new events, as duplicate incoming events are ignored.
+	vector, err := m.synchronizer.SequenceNumberVector()
+	if err != nil {
+		return nil, err
+	}
+
 	client := pb.NewReplicationServiceClient(conn)
-	stream, err := client.SubscribeUpdates(context.Background(), &pb.SubscribeRequest{})
+	stream, err := client.SubscribeUpdates(context.Background(), &pb.SubscribeRequest{
+		SequenceNumberVector: vector,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +101,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 			return err
 		}
 
-		log.Printf("Received update from `%s`", p.Id)
+		m.log.Printf("Received update from `%s`", p.Id)
 
 		// Update ephemeral state before delivering the event.
 		p.EphemeralState.Store(&EphemeralStateHolder{
@@ -129,7 +109,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 		})
 
 		for _, event := range update.Events {
-			m.deliverEvent(event)
+			m.synchronizer.IncomingEvents() <- event
 		}
 	}
 }
