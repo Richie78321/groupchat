@@ -23,11 +23,11 @@ func (s *subscription) broadcastEvent(event *pb.Event) {
 	s.eventsToBroadcast <- event
 }
 
-func sendSubscriptionUpdate(event *pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
 		// TODO(richie): Send a real ephemeral state here
 		EphemeralState: &pb.EphemeralState{},
-		Events:         []*pb.Event{event},
+		Events:         events,
 	})
 }
 
@@ -48,16 +48,19 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 
 	log.Printf("Peer subscribed")
 
-	// The initial update must happen strictly after the subscription is registered.
+	// Send an initial subscription update that includes the events the subscriber does not
+	// already have, according to the attached sequence number vector.
+	//
+	// This initial update must happen strictly after the subscription is registered.
 	// Otherwise events could be lost in the time between the initial update and subscription registration.
-
-	// TODO(richie): Need to trigger a special initial update that diffs events between the processes. The subscribe request should send a process event sequence number vector.
+	eventDiff := s.synchronizer.EventDiff(req.SequenceNumberVector)
+	sendSubscriptionUpdate(eventDiff, stream)
 
 	for {
 		select {
 		case event := <-subscription.eventsToBroadcast:
 			// When new events are available, send a subscription update
-			if err := sendSubscriptionUpdate(event, stream); err != nil {
+			if err := sendSubscriptionUpdate([]*pb.Event{event}, stream); err != nil {
 				log.Printf("%v", err)
 				return err
 			}
