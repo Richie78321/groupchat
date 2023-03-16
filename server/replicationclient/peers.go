@@ -13,34 +13,6 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
-type PeerManager struct {
-	Peers            []*Peer
-	delivered_events chan *pb.Event
-}
-
-func NewPeerManager(peers []*Peer) *PeerManager {
-	return &PeerManager{
-		Peers:            peers,
-		delivered_events: make(chan *pb.Event),
-	}
-}
-
-func (m *PeerManager) deliverEvent(e *pb.Event) {
-	m.delivered_events <- e
-}
-
-func (m *PeerManager) SpawnPeerThreads() {
-	// Spawn a thread to manage connections to each peer
-	for _, peer := range m.Peers {
-		// TODO(richie): Potentially use context here to make threads cancellable
-		go peer.connect(m)
-	}
-}
-
-func (m *PeerManager) Events() <-chan *pb.Event {
-	return m.delivered_events
-}
-
 // EphemeralStateHolder is necessary to avoid storing a nil value in atomic.Value when
 // *pb.EphemeralState can sometimes be nil.
 type EphemeralStateHolder struct {
@@ -129,7 +101,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 		})
 
 		for _, event := range update.Events {
-			m.deliverEvent(event)
+			m.newEvents <- event
 		}
 	}
 }

@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/Richie78321/groupchat/server/replicationclient"
-	"github.com/Richie78321/groupchat/server/replicationserver"
 )
 
 type Event struct {
@@ -48,7 +46,12 @@ type SqliteChatdata struct {
 	pid                  string
 	nextSequenceNumber   int64
 	nextLamportTimestamp int64
+
+	newEvents         chan *pb.Event
+	eventsToBroadcast chan *pb.Event
 }
+
+const eventBufferSize = 100
 
 func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
@@ -66,12 +69,25 @@ func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 		pid:                  pid,
 		nextSequenceNumber:   0,
 		nextLamportTimestamp: 0,
+		newEvents:            make(chan *pb.Event, eventBufferSize),
+		eventsToBroadcast:    make(chan *pb.Event, eventBufferSize),
 	}
 	if err = c.loadFromDisk(); err != nil {
 		return nil, err
 	}
 
+	// Spawn a thread to consume new events
+	go c.consumeNewEvents()
+
 	return c, nil
+}
+
+func (c *SqliteChatdata) NewEvents() chan<- *pb.Event {
+	return c.newEvents
+}
+
+func (c *SqliteChatdata) EventsToBroadcast() <-chan *pb.Event {
+	return c.newEvents
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
@@ -101,10 +117,11 @@ func (c *SqliteChatdata) loadFromDisk() error {
 	return nil
 }
 
-func (c *SqliteChatdata) ConsumeEventsFromPeers(client *replicationclient.PeerManager, server *replicationserver.ReplicationServer) {
+// consumeNewEvents consumes events and broadcasts new events.
+func (c *SqliteChatdata) consumeNewEvents() {
 	for {
-		newEvent := <-client.Events()
-		ignored, err := c.ConsumeEvent(newEvent)
+		newEvent := <-c.newEvents
+		ignored, err := c.consumeEvent(newEvent)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
@@ -113,17 +130,17 @@ func (c *SqliteChatdata) ConsumeEventsFromPeers(client *replicationclient.PeerMa
 		}
 
 		// If the event was not ignored, then broadcast the event to peers.
-		server.BroadcastEvents([]*pb.Event{newEvent})
+		c.eventsToBroadcast <- newEvent
 	}
 }
 
-// ConsumeEvent consumes an event locally. Returns a boolean that is true when
+// consumeEvent consumes an event locally. Returns a boolean that is true when
 // the event was ignored.
 //
 // An event is ignored if it has already been consumed, which is represented by
 // an event with the same PID and sequence number (the event's composite primary
 // key) already existing in the database.
-func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) (bool, error) {
+func (c *SqliteChatdata) consumeEvent(event *pb.Event) (bool, error) {
 	c.Lock.Lock()
 	defer c.Lock.Unlock()
 

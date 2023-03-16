@@ -4,24 +4,39 @@ import (
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/Richie78321/groupchat/server/replicationclient"
 )
 
 type ReplicationServer struct {
 	lock sync.Mutex
 
-	subscriptions map[*subscription]struct{}
+	subscriptions     map[*subscription]struct{}
+	eventsToBroadcast <-chan *pb.Event
 
-	peerManager *replicationclient.PeerManager
 	pb.UnimplementedReplicationServiceServer
 }
 
-func (r *ReplicationServer) BroadcastEvents(events []*pb.Event) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
+func NewReplicationServer(eventsToBroadcast <-chan *pb.Event) *ReplicationServer {
+	r := &ReplicationServer{
+		lock:              sync.Mutex{},
+		subscriptions:     make(map[*subscription]struct{}),
+		eventsToBroadcast: eventsToBroadcast,
+	}
 
-	for subscription := range r.subscriptions {
-		subscription.broadcastEvents(events)
+	// Spawn a thread to broadcast events to subscriptions
+	go r.broadcastEvents()
+
+	return r
+}
+
+func (r *ReplicationServer) broadcastEvents() {
+	for {
+		event := <-r.eventsToBroadcast
+
+		r.lock.Lock()
+		for subscription := range r.subscriptions {
+			subscription.broadcastEvent(event)
+		}
+		r.lock.Unlock()
 	}
 }
 
@@ -31,12 +46,4 @@ func (r *ReplicationServer) addSubscription(s *subscription) {
 
 func (r *ReplicationServer) removeSubscription(s *subscription) {
 	delete(r.subscriptions, s)
-}
-
-func NewReplicationServer(peerManager *replicationclient.PeerManager) *ReplicationServer {
-	return &ReplicationServer{
-		lock:          sync.Mutex{},
-		subscriptions: make(map[*subscription]struct{}),
-		peerManager:   peerManager,
-	}
 }
