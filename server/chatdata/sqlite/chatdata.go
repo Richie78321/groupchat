@@ -96,6 +96,11 @@ func (c *SqliteChatdata) SequenceNumberVector() chatdata.SequenceNumberVector {
 	return nil
 }
 
+func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) []*pb.Event {
+	// TODO(richie): Implement
+	return nil
+}
+
 func (c *SqliteChatdata) loadFromDisk() error {
 	// Load the next sequence number from disk.
 	selectedEvent := &Event{}

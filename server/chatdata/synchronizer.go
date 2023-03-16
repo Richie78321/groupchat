@@ -9,7 +9,11 @@ type EventSynchronizer interface {
 	IncomingEvents() chan<- *pb.Event
 	// OutgoingEvents that should be broadcasted.
 	OutgoingEvents() <-chan *pb.Event
+
 	// SequenceNumberVector is a map of process PIDs to the next-expected
 	// event sequence number from that process.
 	SequenceNumberVector() SequenceNumberVector
+	// EventDiff returns the events that have not yet been received by the given
+	// sequence number vector.
+	EventDiff(SequenceNumberVector) []*pb.Event
 }
