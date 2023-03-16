@@ -171,7 +171,7 @@ func (c *SqliteChatdata) sequenceNumberDiff(pid string, sequence_number int64) (
 
 	// Query for MessageAppend events
 	messageEvents := make([]MessageEvent, 0)
-	err := c.db.Model(&MessageEvent{}).Where("pid = ? AND sequence_number >= ?", pid, sequence_number).Find(messageEvents).Error
+	err := c.db.Model(&MessageEvent{}).Joins("Event").Where("Event__pid = ? AND Event__sequence_number >= ?", pid, sequence_number).Find(&messageEvents).Error
 	if err != nil {
 		return nil, err
 	}
