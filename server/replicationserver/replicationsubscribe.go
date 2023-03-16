@@ -44,7 +44,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.lock.Unlock()
 	}()
 
-	s.log.Printf("Peer subscribed")
+	s.log.Printf("Peer subscribed with sequence number vector: %v", req.SequenceNumberVector)
 
 	// Send an initial subscription update that includes the events the subscriber does not
 	// already have, according to the attached sequence number vector.
@@ -60,6 +60,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.log.Printf("%v", err)
 		return err
 	}
+	s.log.Print("Sent initial update to subscriber")
 
 	for {
 		select {
