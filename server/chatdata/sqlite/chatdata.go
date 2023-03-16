@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -15,9 +16,9 @@ import (
 type Event struct {
 	// Composite primary key out of the PID and sequence number, as this
 	// combination should be unique.
-	Pid              string `gorm:"primaryKey;autoIncrement:false;not null"`
-	SequenceNumber   int64  `gorm:"primaryKey;autoIncrement:false;not null"`
-	LamportTimestamp int64  `gorm:"not null"`
+	Pid              string `gorm:"primaryKey;autoIncrement:false;not null;index"`
+	SequenceNumber   int64  `gorm:"primaryKey;autoIncrement:false;not null;index"`
+	LamportTimestamp int64  `gorm:"not null;index"`
 
 	EventType string
 	EventID   int
@@ -94,9 +95,49 @@ func (c *SqliteChatdata) OutgoingEvents() <-chan *pb.Event {
 	return c.incomingEvents
 }
 
-func (c *SqliteChatdata) SequenceNumberVector() chatdata.SequenceNumberVector {
-	// TODO(richie): Implement
-	return nil
+func (c *SqliteChatdata) SequenceNumberVector() (chatdata.SequenceNumberVector, error) {
+	vector := make(chatdata.SequenceNumberVector)
+	for _, pid := range c.allPids {
+		nextExpected, err := c.nextExpectedSequenceNumber(pid)
+		if err != nil {
+			return nil, err
+		}
+
+		vector[pid] = nextExpected
+	}
+
+	return vector, nil
+}
+
+func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
+	var result struct {
+		NextExpected int64 `gorm:"column:next_expected"`
+	}
+
+	// Returns the smallest missing sequence number for a specific PID.
+	// This query could likely be made more efficient, but it works for now.
+	err := c.db.Raw(`
+		SELECT MIN(sequence_number + 1) AS next_expected
+		FROM event t1
+		WHERE pid = ?
+		  AND NOT EXISTS (
+			SELECT *
+			FROM event t2
+			WHERE t2.sequence_number = t1.sequence_number + 1
+		)
+	`, pid).Scan(&result).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// There are no events with this PID. Therefore the next-expected
+			// sequence number is zero.
+			return 0, nil
+		}
+
+		return 0, err
+	}
+
+	return result.NextExpected, nil
 }
 
 func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) []*pb.Event {
