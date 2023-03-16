@@ -35,7 +35,7 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 	pb.RegisterReplicationServiceServer(grpcServer, replicationServer)
 
 	log.Printf("Running server on %s...\n", address)
-	peerManager.ConnectPeers()
+	peerManager.SpawnPeerThreads()
 	grpcServer.Serve(lis)
 
 	return nil
