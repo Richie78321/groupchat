@@ -53,8 +53,15 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 	//
 	// This initial update must happen strictly after the subscription is registered.
 	// Otherwise events could be lost in the time between the initial update and subscription registration.
-	eventDiff := s.synchronizer.EventDiff(req.SequenceNumberVector)
-	sendSubscriptionUpdate(eventDiff, stream)
+	eventDiff, err := s.synchronizer.EventDiff(req.SequenceNumberVector)
+	if err != nil {
+		log.Printf("%v", err)
+		return err
+	}
+	if err := sendSubscriptionUpdate(eventDiff, stream); err != nil {
+		log.Printf("%v", err)
+		return err
+	}
 
 	for {
 		select {

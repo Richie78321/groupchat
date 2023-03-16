@@ -140,9 +140,9 @@ func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
 	return result.NextExpected, nil
 }
 
-func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) []*pb.Event {
+func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) ([]*pb.Event, error) {
 	// TODO(richie): Implement
-	return nil
+	return nil, nil
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {

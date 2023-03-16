@@ -12,8 +12,8 @@ type EventSynchronizer interface {
 
 	// SequenceNumberVector is a map of process PIDs to the next-expected
 	// event sequence number from that process.
-	SequenceNumberVector() SequenceNumberVector
+	SequenceNumberVector() (SequenceNumberVector, error)
 	// EventDiff returns the events that have not yet been received by the given
 	// sequence number vector.
-	EventDiff(SequenceNumberVector) []*pb.Event
+	EventDiff(SequenceNumberVector) ([]*pb.Event, error)
 }
