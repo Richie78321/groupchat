@@ -1,8 +1,6 @@
 package replicationserver
 
 import (
-	"log"
-
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
@@ -46,7 +44,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.lock.Unlock()
 	}()
 
-	log.Printf("Peer subscribed")
+	s.log.Printf("Peer subscribed")
 
 	// Send an initial subscription update that includes the events the subscriber does not
 	// already have, according to the attached sequence number vector.
@@ -55,11 +53,11 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 	// Otherwise events could be lost in the time between the initial update and subscription registration.
 	eventDiff, err := s.synchronizer.EventDiff(req.SequenceNumberVector)
 	if err != nil {
-		log.Printf("%v", err)
+		s.log.Printf("%v", err)
 		return err
 	}
 	if err := sendSubscriptionUpdate(eventDiff, stream); err != nil {
-		log.Printf("%v", err)
+		s.log.Printf("%v", err)
 		return err
 	}
 
@@ -68,7 +66,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		case event := <-subscription.eventsToBroadcast:
 			// When new events are available, send a subscription update
 			if err := sendSubscriptionUpdate([]*pb.Event{event}, stream); err != nil {
-				log.Printf("%v", err)
+				s.log.Printf("%v", err)
 				return err
 			}
 		case <-stream.Context().Done():

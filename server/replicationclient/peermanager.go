@@ -1,16 +1,24 @@
 package replicationclient
 
-import "github.com/Richie78321/groupchat/server/chatdata"
+import (
+	"log"
+	"os"
+
+	"github.com/Richie78321/groupchat/server/chatdata"
+)
 
 type PeerManager struct {
 	Peers        []*Peer
 	synchronizer chatdata.EventSynchronizer
+
+	log *log.Logger
 }
 
 func NewPeerManager(peers []*Peer, synchronizer chatdata.EventSynchronizer) *PeerManager {
 	p := &PeerManager{
 		Peers:        peers,
 		synchronizer: synchronizer,
+		log:          log.New(os.Stdout, "[Replication Client] ", log.Default().Flags()),
 	}
 
 	// Spawn threads to manage peer connections

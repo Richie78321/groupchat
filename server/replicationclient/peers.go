@@ -2,7 +2,6 @@ package replicationclient
 
 import (
 	"context"
-	"log"
 	"sync/atomic"
 	"time"
 
@@ -43,17 +42,17 @@ func (p *Peer) connect(m *PeerManager) {
 
 		stream, err := p.attemptSubscribe(m)
 		if err != nil {
-			log.Printf("Failed to subscribe to `%s`: %v", p.Id, err)
+			m.log.Printf("Failed to subscribe to `%s`: %v", p.Id, err)
 			continue
 		}
 
 		// The peer is considered connected after successfully establishing an update subscription.
-		log.Printf("Peer subscription to `%s` succeeeded", p.Id)
+		m.log.Printf("Peer subscription to `%s` succeeeded", p.Id)
 		p.Connected.Store(true)
 
 		err = p.readUpdates(stream, m)
 		if err != nil {
-			log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
+			m.log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
 			continue
 		}
 	}
@@ -102,7 +101,7 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 			return err
 		}
 
-		log.Printf("Received update from `%s`", p.Id)
+		m.log.Printf("Received update from `%s`", p.Id)
 
 		// Update ephemeral state before delivering the event.
 		p.EphemeralState.Store(&EphemeralStateHolder{

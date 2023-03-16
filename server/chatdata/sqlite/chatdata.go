@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
 	"gorm.io/driver/sqlite"
@@ -53,6 +54,8 @@ type SqliteChatdata struct {
 
 	incomingEvents chan *pb.Event
 	outgoingEvents chan *pb.Event
+
+	log *log.Logger
 }
 
 const eventBufferSize = 100
@@ -76,6 +79,7 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 		incomingEvents:       make(chan *pb.Event, eventBufferSize),
 		outgoingEvents:       make(chan *pb.Event, eventBufferSize),
 		allPids:              append(otherPids, myPid),
+		log:                  log.New(os.Stdout, "[Chatdata] ", log.Default().Flags()),
 	}
 	if err = c.loadFromDisk(); err != nil {
 		return nil, err
@@ -220,11 +224,14 @@ func (c *SqliteChatdata) consumeNewEvents() {
 		newEvent := <-c.incomingEvents
 		ignored, err := c.consumeEvent(newEvent)
 		if err != nil {
-			log.Fatalf("%v", err)
+			c.log.Fatalf("%v", err)
 		}
 		if ignored {
+			c.log.Printf("Ignored duplicate event PID=%s, SEQ=%d, LTS=%d", newEvent.Pid, newEvent.SequenceNumber, newEvent.LamportTimestamp)
 			continue
 		}
+
+		c.log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", newEvent.Pid, newEvent.SequenceNumber, newEvent.LamportTimestamp)
 
 		// If the event was not ignored, then broadcast the event to peers.
 		c.outgoingEvents <- newEvent
@@ -284,6 +291,5 @@ func (c *SqliteChatdata) consumeEvent(event *pb.Event) (bool, error) {
 		return false, fmt.Errorf("unknown event type: %v", e)
 	}
 
-	log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", event.Pid, event.SequenceNumber, event.LamportTimestamp)
 	return false, c.db.Create(convertedEvent).Error
 }
