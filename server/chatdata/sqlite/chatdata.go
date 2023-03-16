@@ -118,11 +118,11 @@ func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
 	// This query could likely be made more efficient, but it works for now.
 	err := c.db.Raw(`
 		SELECT MIN(sequence_number + 1) AS next_expected
-		FROM event t1
+		FROM events t1
 		WHERE pid = ?
 		  AND NOT EXISTS (
 			SELECT *
-			FROM event t2
+			FROM events t2
 			WHERE t2.sequence_number = t1.sequence_number + 1
 		)
 	`, pid).Scan(&result).Error
