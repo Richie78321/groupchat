@@ -44,9 +44,11 @@ type LikeEvent struct {
 type SqliteChatdata struct {
 	Lock                 sync.Mutex
 	db                   *gorm.DB
-	pid                  string
+	myPid                string
 	nextSequenceNumber   int64
 	nextLamportTimestamp int64
+
+	allPids []string
 
 	incomingEvents chan *pb.Event
 	outgoingEvents chan *pb.Event
@@ -54,7 +56,7 @@ type SqliteChatdata struct {
 
 const eventBufferSize = 100
 
-func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
+func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*SqliteChatdata, error) {
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -67,11 +69,12 @@ func NewSqliteChatdata(dbPath string, pid string) (*SqliteChatdata, error) {
 	c := &SqliteChatdata{
 		Lock:                 sync.Mutex{},
 		db:                   db,
-		pid:                  pid,
+		myPid:                myPid,
 		nextSequenceNumber:   0,
 		nextLamportTimestamp: 0,
 		incomingEvents:       make(chan *pb.Event, eventBufferSize),
 		outgoingEvents:       make(chan *pb.Event, eventBufferSize),
+		allPids:              append(otherPids, myPid),
 	}
 	if err = c.loadFromDisk(); err != nil {
 		return nil, err
@@ -105,7 +108,7 @@ func (c *SqliteChatdata) loadFromDisk() error {
 	// Load the next sequence number from disk.
 	selectedEvent := &Event{}
 	// We are only concerned with events that have the server's PID.
-	result := c.db.Order("sequence_number DESC").Where("pid = ?", c.pid).Limit(1).Find(selectedEvent)
+	result := c.db.Order("sequence_number DESC").Where("pid = ?", c.myPid).Limit(1).Find(selectedEvent)
 	if result.Error != nil {
 		return result.Error
 	}

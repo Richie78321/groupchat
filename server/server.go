@@ -22,7 +22,12 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 		return err
 	}
 
-	chatdata, err := sqlite.NewSqliteChatdata(fmt.Sprintf("%s.sqlite", id), id)
+	peerPids := make([]string, len(peers))
+	for i, peer := range peers {
+		peerPids[i] = peer.Id
+	}
+
+	chatdata, err := sqlite.NewSqliteChatdata(fmt.Sprintf("%s.sqlite", id), id, peerPids)
 	if err != nil {
 		return err
 	}
