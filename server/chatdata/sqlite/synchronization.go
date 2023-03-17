@@ -87,6 +87,8 @@ func (c *SqliteChatdata) EventDiff(vector chatdata.SequenceNumberVector) ([]*pb.
 	return eventDiff, nil
 }
 
+// sequenceNumberDiff returns events from the specified PID that occurred on
+// or after the specified sequence number.
 func (c *SqliteChatdata) sequenceNumberDiff(pid string, sequence_number int64) ([]*pb.Event, error) {
 	eventDiff := make([]*pb.Event, 0)
 
@@ -97,13 +99,18 @@ func (c *SqliteChatdata) sequenceNumberDiff(pid string, sequence_number int64) (
 		return nil, err
 	}
 	for _, messageEvent := range messageEvents {
-		eventDiff = append(eventDiff, messageEventToEventPb(&messageEvent))
+		eventDiff = append(eventDiff, messageEventToPb(&messageEvent))
 	}
 
-	// TODO(richie): Finish by also querying for MessageLike events and converting them.
-	// Then initialization is complete. Should then make a test to ensure that initial synchronization works.
-	//
-	// Then need to write a test that shows that updates work.
+	// Query for MessageLike events
+	likeEvents := make([]LikeEvent, 0)
+	err = c.db.Model(&LikeEvent{}).Joins("Event").Where("Event__pid = ? AND Event__sequence_number >= ?", pid, sequence_number).Find(&likeEvents).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, likeEvent := range likeEvents {
+		eventDiff = append(eventDiff, likeEventToPb(&likeEvent))
+	}
 
 	return eventDiff, nil
 }

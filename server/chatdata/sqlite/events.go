@@ -35,7 +35,7 @@ type LikeEvent struct {
 	Event      Event `gorm:"polymorphic:Event"`
 }
 
-func messageEventToEventPb(m *MessageEvent) *pb.Event {
+func messageEventToPb(m *MessageEvent) *pb.Event {
 	return &pb.Event{
 		Pid:              m.Event.Pid,
 		SequenceNumber:   m.Event.SequenceNumber,
@@ -46,6 +46,22 @@ func messageEventToEventPb(m *MessageEvent) *pb.Event {
 				MessageUuid: m.MessageID,
 				AuthorId:    m.AuthorID,
 				Body:        m.MessageBody,
+			},
+		},
+	}
+}
+
+func likeEventToPb(l *LikeEvent) *pb.Event {
+	return &pb.Event{
+		Pid:              l.Event.Pid,
+		SequenceNumber:   l.Event.SequenceNumber,
+		LamportTimestamp: l.Event.LamportTimestamp,
+		Event: &pb.Event_MessageLike{
+			MessageLike: &pb.MessageLike{
+				ChatroomId:  l.ChatroomID,
+				MessageUuid: l.MessageID,
+				LikerId:     l.LikerID,
+				Like:        l.Like,
 			},
 		},
 	}
