@@ -8,7 +8,7 @@ import (
 )
 
 func makeChatdata(t *testing.T, pid string) *SqliteChatdata {
-	chatdata, err := NewSqliteChatdata(":memory:", pid)
+	chatdata, err := NewSqliteChatdata(":memory:", pid, []string{"otherpid1"})
 	assert.NoError(t, err)
 
 	return chatdata
