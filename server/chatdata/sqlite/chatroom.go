@@ -48,11 +48,23 @@ func (c *chatroom) RemoveSubscription(u uuid.UUID) {
 
 func (c *chatroom) Users() (users []*pb.User) {
 	// TODO(richie): Implement this using ephemeral data from peers
-	return nil
+	for _, subscription := range c.subscriptions {
+		users = append(users, subscription.User())
+	}
+
+	return users
 }
 
-func (c *chatroom) AppendMessage(author *pb.User, body string) {
-	// TODO(richie): Implement
+func (c *chatroom) AppendMessage(author *pb.User, body string) error {
+	return c.sqlChatdata.ConsumeNewEvent(&pb.Event{
+		Event: &pb.Event_MessageAppend{
+			MessageAppend: &pb.MessageAppend{
+				MessageUuid: uuid.NewString(),
+				AuthorId:    author.Username,
+				Body:        body,
+			},
+		},
+	}, c.chatroomId)
 }
 
 func (c *chatroom) LatestMessages(n int) []chatdata.Message {

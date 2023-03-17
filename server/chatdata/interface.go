@@ -24,7 +24,7 @@ type Chatroom interface {
 	RemoveSubscription(uuid.UUID)
 	Users() []*pb.User
 
-	AppendMessage(*pb.User, string)
+	AppendMessage(*pb.User, string) error
 	LatestMessages(int) []Message
 	AllMessages() []Message
 	MessageById(uuid.UUID) (Message, bool)
