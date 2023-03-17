@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"fmt"
+	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
@@ -93,11 +94,19 @@ func pbToEvent(event *pb.Event) (interface{}, error) {
 	}
 }
 
+func (c *SqliteChatdata) ChatroomLock(chatroomId string) sync.Locker {
+	chatroomLock, _ := c.chatroomLocks.LoadOrStore(chatroomId, &sync.Mutex{})
+	return chatroomLock.(*sync.Mutex)
+}
+
 // consumeEvents consumes events from the incomingEvents channel.
 func (c *SqliteChatdata) consumeEvents() {
 	for {
-		// TODO: Add chatroom locking here
-		c.ConsumeEvent(<-c.incomingEvents)
+		newEvent := <-c.incomingEvents
+
+		c.ChatroomLock(newEvent.ChatroomId).Lock()
+		c.ConsumeEvent(newEvent)
+		c.ChatroomLock(newEvent.ChatroomId).Unlock()
 	}
 }
 

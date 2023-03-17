@@ -12,7 +12,12 @@ import (
 )
 
 type SqliteChatdata struct {
+	// globalLock is held when inserting an event into the database or
+	// accessing / mutating the current sequence number or LTS.
 	globalLock sync.Mutex
+	// chatroomLocks are locks for individual chatrooms. Events for a chatroom
+	// should only be consumed if this lock is held.
+	chatroomLocks sync.Map
 
 	db    *gorm.DB
 	myPid string
