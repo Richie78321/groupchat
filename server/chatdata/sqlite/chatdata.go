@@ -12,9 +12,11 @@ import (
 )
 
 type SqliteChatdata struct {
-	lock                 sync.Mutex
-	db                   *gorm.DB
-	myPid                string
+	globalLock sync.Mutex
+
+	db    *gorm.DB
+	myPid string
+
 	nextSequenceNumber   int64
 	nextLamportTimestamp int64
 
@@ -39,27 +41,33 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 	db.AutoMigrate(&MessageEvent{})
 
 	c := &SqliteChatdata{
-		lock:                 sync.Mutex{},
-		db:                   db,
-		myPid:                myPid,
+		globalLock: sync.Mutex{},
+		db:         db,
+		myPid:      myPid,
+
 		nextSequenceNumber:   0,
 		nextLamportTimestamp: 0,
-		incomingEvents:       make(chan *pb.Event, eventBufferSize),
-		outgoingEvents:       make(chan *pb.Event, eventBufferSize),
-		allPids:              append(otherPids, myPid),
-		log:                  log.New(os.Stdout, "[Chatdata] ", log.Default().Flags()),
+
+		incomingEvents: make(chan *pb.Event, eventBufferSize),
+		outgoingEvents: make(chan *pb.Event, eventBufferSize),
+		allPids:        append(otherPids, myPid),
+		log:            log.New(os.Stdout, "[Chatdata] ", log.Default().Flags()),
 	}
 	if err = c.loadFromDisk(); err != nil {
 		return nil, err
 	}
 
 	// Spawn a thread to consume new events
-	go c.consumeNewEvents()
+	go c.consumeEvents()
 
 	return c, nil
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
+	// Hold the global lock because we are changing the sequence number and LTS
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
+
 	// Load the next sequence number from disk.
 	selectedEvent := &Event{}
 	// We are only concerned with events that have the server's PID.

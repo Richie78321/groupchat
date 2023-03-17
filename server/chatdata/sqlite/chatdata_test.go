@@ -38,11 +38,11 @@ func TestIgnoreDuplicates(t *testing.T) {
 	}
 
 	// First event should be successfully consumed.
-	_, err := chatdata.consumeEvent(testEvent1)
+	_, err := chatdata.consumeEventHelper(testEvent1)
 	assert.NoError(t, err)
 
 	// Second duplicate event should not cause any failures.
-	ignored, err := chatdata.consumeEvent(testEvent2)
+	ignored, err := chatdata.consumeEventHelper(testEvent2)
 	assert.NoError(t, err)
 	assert.True(t, ignored, "Expected the duplicate event to be ignored")
 }
@@ -51,7 +51,7 @@ func TestLTSUpdated(t *testing.T) {
 	chatdata := makeChatdata(t, "server1")
 	lamportTimestamp := int64(100)
 
-	_, err := chatdata.consumeEvent(&pb.Event{
+	_, err := chatdata.consumeEventHelper(&pb.Event{
 		Pid:              "somepid",
 		SequenceNumber:   0,
 		LamportTimestamp: lamportTimestamp,

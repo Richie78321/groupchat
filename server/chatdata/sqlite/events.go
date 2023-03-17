@@ -67,11 +67,11 @@ func likeEventToPb(l *LikeEvent) *pb.Event {
 	}
 }
 
-// consumeNewEvents consumes events and broadcasts new events.
-func (c *SqliteChatdata) consumeNewEvents() {
+// consumeEvents consumes events and broadcasts new events.
+func (c *SqliteChatdata) consumeEvents() {
 	for {
 		newEvent := <-c.incomingEvents
-		ignored, err := c.consumeEvent(newEvent)
+		ignored, err := c.consumeEventHelper(newEvent)
 		if err != nil {
 			c.log.Fatalf("%v", err)
 		}
@@ -87,15 +87,17 @@ func (c *SqliteChatdata) consumeNewEvents() {
 	}
 }
 
-// consumeEvent consumes an event locally. Returns a boolean that is true when
+// consumeEventHelper consumes an event locally. Returns a boolean that is true when
 // the event was ignored.
 //
 // An event is ignored if it has already been consumed, which is represented by
 // an event with the same PID and sequence number (the event's composite primary
 // key) already existing in the database.
-func (c *SqliteChatdata) consumeEvent(event *pb.Event) (bool, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
+	// Hold the global lock to prevent any race conditions with duplicate events
+	// and changes to LTS.
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
 
 	// Ensure this event has not already been seen by this server.
 	result := c.db.Where("pid = ? AND sequence_number = ?", event.Pid, event.SequenceNumber).Limit(1).Find(&Event{})
