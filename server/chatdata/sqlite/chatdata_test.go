@@ -21,9 +21,9 @@ func TestIgnoreDuplicates(t *testing.T) {
 		Pid:              pid,
 		SequenceNumber:   0,
 		LamportTimestamp: 0,
+		ChatroomId:       "chatroom",
 		Event: &pb.Event_MessageAppend{
 			MessageAppend: &pb.MessageAppend{
-				ChatroomId:  "chatroom",
 				MessageUuid: "messageid",
 				AuthorId:    "authorid",
 				Body:        "message",
@@ -55,9 +55,9 @@ func TestLTSUpdated(t *testing.T) {
 		Pid:              "somepid",
 		SequenceNumber:   0,
 		LamportTimestamp: lamportTimestamp,
+		ChatroomId:       "chatroom",
 		Event: &pb.Event_MessageAppend{
 			MessageAppend: &pb.MessageAppend{
-				ChatroomId:  "chatroom",
 				MessageUuid: "messageid",
 				AuthorId:    "authorid",
 				Body:        "message",

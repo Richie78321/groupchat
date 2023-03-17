@@ -12,6 +12,7 @@ type Event struct {
 	Pid              string `gorm:"primaryKey;autoIncrement:false;not null;index"`
 	SequenceNumber   int64  `gorm:"primaryKey;autoIncrement:false;not null;index"`
 	LamportTimestamp int64  `gorm:"not null;index"`
+	ChatroomID       string
 
 	EventType string
 	EventID   int
@@ -19,7 +20,6 @@ type Event struct {
 
 type MessageEvent struct {
 	ID          int
-	ChatroomID  string
 	MessageID   string
 	AuthorID    string
 	MessageBody string
@@ -27,12 +27,11 @@ type MessageEvent struct {
 }
 
 type LikeEvent struct {
-	ID         int
-	ChatroomID string
-	MessageID  string
-	LikerID    string
-	Like       bool
-	Event      Event `gorm:"polymorphic:Event"`
+	ID        int
+	MessageID string
+	LikerID   string
+	Like      bool
+	Event     Event `gorm:"polymorphic:Event"`
 }
 
 func messageEventToPb(m *MessageEvent) *pb.Event {
@@ -40,9 +39,9 @@ func messageEventToPb(m *MessageEvent) *pb.Event {
 		Pid:              m.Event.Pid,
 		SequenceNumber:   m.Event.SequenceNumber,
 		LamportTimestamp: m.Event.LamportTimestamp,
+		ChatroomId:       m.Event.ChatroomID,
 		Event: &pb.Event_MessageAppend{
 			MessageAppend: &pb.MessageAppend{
-				ChatroomId:  m.ChatroomID,
 				MessageUuid: m.MessageID,
 				AuthorId:    m.AuthorID,
 				Body:        m.MessageBody,
@@ -56,9 +55,9 @@ func likeEventToPb(l *LikeEvent) *pb.Event {
 		Pid:              l.Event.Pid,
 		SequenceNumber:   l.Event.SequenceNumber,
 		LamportTimestamp: l.Event.LamportTimestamp,
+		ChatroomId:       l.Event.ChatroomID,
 		Event: &pb.Event_MessageLike{
 			MessageLike: &pb.MessageLike{
-				ChatroomId:  l.ChatroomID,
 				MessageUuid: l.MessageID,
 				LikerId:     l.LikerID,
 				Like:        l.Like,
@@ -113,6 +112,7 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 		Pid:              event.Pid,
 		SequenceNumber:   event.SequenceNumber,
 		LamportTimestamp: event.LamportTimestamp,
+		ChatroomID:       event.ChatroomId,
 	}
 
 	// Update this server's Lamport Timestamp if this event has a new maximum timestamp.
@@ -125,7 +125,6 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 	switch e := event.Event.(type) {
 	case *pb.Event_MessageAppend:
 		convertedEvent = &MessageEvent{
-			ChatroomID:  e.MessageAppend.ChatroomId,
 			MessageID:   e.MessageAppend.MessageUuid,
 			AuthorID:    e.MessageAppend.AuthorId,
 			MessageBody: e.MessageAppend.Body,
@@ -133,10 +132,9 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 		}
 	case *pb.Event_MessageLike:
 		convertedEvent = &LikeEvent{
-			ChatroomID: e.MessageLike.ChatroomId,
-			MessageID:  e.MessageLike.MessageUuid,
-			LikerID:    e.MessageLike.LikerId,
-			Like:       e.MessageLike.Like,
+			MessageID: e.MessageLike.MessageUuid,
+			LikerID:   e.MessageLike.LikerId,
+			Like:      e.MessageLike.Like,
 		}
 	default:
 		return false, fmt.Errorf("unknown event type: %v", e)

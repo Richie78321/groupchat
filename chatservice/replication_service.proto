@@ -7,26 +7,25 @@ package chatservice;
 message EphemeralState {}
 
 message MessageAppend {
-    string chatroom_id = 1;
-    string message_uuid = 2;
-    string author_id = 3;
-    string body = 4;
+    string message_uuid = 1;
+    string author_id = 2;
+    string body = 3;
 }
 
 message MessageLike {
-    string chatroom_id = 1;
-    string message_uuid = 2;
-    string liker_id = 3;
-    bool like = 4;
+    string message_uuid = 1;
+    string liker_id = 2;
+    bool like = 3;
 }
 
 message Event {
     string pid = 1;
     int64 sequence_number = 2;
     int64 lamport_timestamp = 3;
+    string chatroom_id = 4;
     oneof event {
-        MessageAppend message_append = 4;
-        MessageLike message_like = 5;
+        MessageAppend message_append = 5;
+        MessageLike message_like = 6;
     };
 }
 
