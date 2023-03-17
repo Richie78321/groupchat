@@ -44,6 +44,7 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 	// Create the necessary models if they do not already exist
 	db.AutoMigrate(&Event{})
 	db.AutoMigrate(&MessageEvent{})
+	db.AutoMigrate(&LikeEvent{})
 
 	c := &SqliteChatdata{
 		globalLock: sync.Mutex{},

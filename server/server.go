@@ -34,8 +34,7 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 
 	peerManager := replicationclient.NewPeerManager(peers, chatdata)
 	replicationServer := replicationserver.NewReplicationServer(chatdata)
-	// TODO(richie): Need to integrate SqliteChatdata with chatServer
-	chatServer := chatserver.NewChatServer(peerManager)
+	chatServer := chatserver.NewChatServer(sqlite.NewChatdataManager(chatdata), peerManager)
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		// Keepalive will disconnect an unresponsive client after approximately 1 minute (Time + Timeout).
