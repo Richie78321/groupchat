@@ -66,24 +66,61 @@ func likeEventToPb(l *LikeEvent) *pb.Event {
 	}
 }
 
-// consumeEvents consumes events and broadcasts new events.
+func pbToEvent(event *pb.Event) (interface{}, error) {
+	dbEvent := Event{
+		Pid:              event.Pid,
+		SequenceNumber:   event.SequenceNumber,
+		LamportTimestamp: event.LamportTimestamp,
+		ChatroomID:       event.ChatroomId,
+	}
+
+	switch e := event.Event.(type) {
+	case *pb.Event_MessageAppend:
+		return &MessageEvent{
+			MessageID:   e.MessageAppend.MessageUuid,
+			AuthorID:    e.MessageAppend.AuthorId,
+			MessageBody: e.MessageAppend.Body,
+			Event:       dbEvent,
+		}, nil
+	case *pb.Event_MessageLike:
+		return &LikeEvent{
+			MessageID: e.MessageLike.MessageUuid,
+			LikerID:   e.MessageLike.LikerId,
+			Like:      e.MessageLike.Like,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown event type: %v", e)
+	}
+}
+
+// consumeEvents consumes events from the incomingEvents channel.
 func (c *SqliteChatdata) consumeEvents() {
 	for {
-		newEvent := <-c.incomingEvents
-		ignored, err := c.consumeEventHelper(newEvent)
-		if err != nil {
-			c.log.Fatalf("%v", err)
-		}
-		if ignored {
-			c.log.Printf("Ignored duplicate event PID=%s, SEQ=%d, LTS=%d", newEvent.Pid, newEvent.SequenceNumber, newEvent.LamportTimestamp)
-			continue
-		}
-
-		c.log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", newEvent.Pid, newEvent.SequenceNumber, newEvent.LamportTimestamp)
-
-		// If the event was not ignored, then broadcast the event to peers.
-		c.outgoingEvents <- newEvent
+		// TODO: Add chatroom locking here
+		c.ConsumeEvent(<-c.incomingEvents)
 	}
+}
+
+// ConsumeEvent is the main method for adding events to the chatdata.
+//
+// This method is synchronous (meaning that it only returns after the event
+// has been consumed). This method also assumes that you've already locked
+// the associated chatroom lock for this event.
+func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) error {
+	ignored, err := c.consumeEventHelper(event)
+	if err != nil {
+		return err
+	}
+	if ignored {
+		c.log.Printf("Ignored duplicate event PID=%s, SEQ=%d, LTS=%d", event.Pid, event.SequenceNumber, event.LamportTimestamp)
+		return nil
+	}
+
+	c.log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", event.Pid, event.SequenceNumber, event.LamportTimestamp)
+
+	// If the event was not ignored, then broadcast the event to peers.
+	c.outgoingEvents <- event
+	return nil
 }
 
 // consumeEventHelper consumes an event locally. Returns a boolean that is true when
@@ -93,7 +130,12 @@ func (c *SqliteChatdata) consumeEvents() {
 // an event with the same PID and sequence number (the event's composite primary
 // key) already existing in the database.
 func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
-	// Hold the global lock to prevent any race conditions with duplicate events
+	convertedEvent, err := pbToEvent(event)
+	if err != nil {
+		return false, err
+	}
+
+	// Hold the global lock to prevent race conditions with duplicate events
 	// and changes to LTS.
 	c.globalLock.Lock()
 	defer c.globalLock.Unlock()
@@ -108,36 +150,10 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 		return true, nil
 	}
 
-	dbEvent := Event{
-		Pid:              event.Pid,
-		SequenceNumber:   event.SequenceNumber,
-		LamportTimestamp: event.LamportTimestamp,
-		ChatroomID:       event.ChatroomId,
-	}
-
 	// Update this server's Lamport Timestamp if this event has a new maximum timestamp.
-	newLts := dbEvent.LamportTimestamp + 1
+	newLts := event.LamportTimestamp + 1
 	if c.nextLamportTimestamp < newLts {
 		c.nextLamportTimestamp = newLts
-	}
-
-	var convertedEvent interface{}
-	switch e := event.Event.(type) {
-	case *pb.Event_MessageAppend:
-		convertedEvent = &MessageEvent{
-			MessageID:   e.MessageAppend.MessageUuid,
-			AuthorID:    e.MessageAppend.AuthorId,
-			MessageBody: e.MessageAppend.Body,
-			Event:       dbEvent,
-		}
-	case *pb.Event_MessageLike:
-		convertedEvent = &LikeEvent{
-			MessageID: e.MessageLike.MessageUuid,
-			LikerID:   e.MessageLike.LikerId,
-			Like:      e.MessageLike.Like,
-		}
-	default:
-		return false, fmt.Errorf("unknown event type: %v", e)
 	}
 
 	return false, c.db.Create(convertedEvent).Error

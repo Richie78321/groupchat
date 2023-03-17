@@ -34,7 +34,13 @@ func TestIgnoreDuplicates(t *testing.T) {
 		Pid:              pid,
 		SequenceNumber:   0,
 		LamportTimestamp: 78321,
-		Event:            &pb.Event_MessageAppend{},
+		Event: &pb.Event_MessageAppend{
+			MessageAppend: &pb.MessageAppend{
+				MessageUuid: "messageid",
+				AuthorId:    "authorid",
+				Body:        "message",
+			},
+		},
 	}
 
 	// First event should be successfully consumed.
