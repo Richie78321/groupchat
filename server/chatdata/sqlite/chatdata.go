@@ -69,22 +69,6 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 	return c, nil
 }
 
-// useNextSequenceNumber retrieves and uses the next event sequence number
-// and Lamport Timestamp.
-func (c *SqliteChatdata) useNextSequenceNumber() (seq int64, lts int64) {
-	c.globalLock.Lock()
-	defer c.globalLock.Unlock()
-
-	seq = c.nextSequenceNumber
-	lts = c.nextLamportTimestamp
-
-	// Increment both values as they have now both been used.
-	c.nextSequenceNumber += 1
-	c.nextLamportTimestamp += 1
-
-	return seq, lts
-}
-
 func (c *SqliteChatdata) loadFromDisk() error {
 	// Hold the global lock because we are changing the sequence number and LTS
 	c.globalLock.Lock()

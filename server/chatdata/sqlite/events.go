@@ -94,6 +94,22 @@ func pbToEvent(event *pb.Event) (interface{}, error) {
 	}
 }
 
+// useNextSequenceNumber retrieves and uses the next event sequence number
+// and Lamport Timestamp.
+func (c *SqliteChatdata) useNextSequenceNumber() (seq int64, lts int64) {
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
+
+	seq = c.nextSequenceNumber
+	lts = c.nextLamportTimestamp
+
+	// Increment both values as they have now both been used.
+	c.nextSequenceNumber += 1
+	c.nextLamportTimestamp += 1
+
+	return seq, lts
+}
+
 func (c *SqliteChatdata) ChatroomLock(chatroomId string) sync.Locker {
 	chatroomLock, _ := c.chatroomLocks.LoadOrStore(chatroomId, &sync.Mutex{})
 	return chatroomLock.(*sync.Mutex)
