@@ -41,6 +41,10 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 		// This means we have a maximum user online status staleness of around 1 minute.
 		Time:    30 * time.Second,
 		Timeout: 30 * time.Second,
+	}), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+		// Permit keepalive pings from the client at most every 30 seconds. This allows
+		// the client to send frequent keepalive pings.
+		MinTime: 30 * time.Second,
 	}))
 	pb.RegisterChatServiceServer(grpcServer, chatServer)
 	pb.RegisterReplicationServiceServer(grpcServer, replicationServer)
