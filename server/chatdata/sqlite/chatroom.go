@@ -9,20 +9,21 @@ import (
 )
 
 type chatroom struct {
-	chatdata      *SqliteChatdata
+	sqlChatdata   *SqliteChatdata
 	chatroomId    string
 	subscriptions map[uuid.UUID]chatdata.Subscription
 }
 
-func newChatroom(chatdata *SqliteChatdata, chatroomId string) *chatroom {
+func newChatroom(sqlChatdata *SqliteChatdata, chatroomId string) *chatroom {
 	return &chatroom{
-		chatdata:   chatdata,
-		chatroomId: chatroomId,
+		sqlChatdata:   sqlChatdata,
+		chatroomId:    chatroomId,
+		subscriptions: make(map[uuid.UUID]chatdata.Subscription),
 	}
 }
 
 func (c *chatroom) GetLock() sync.Locker {
-	return c.chatdata.ChatroomLock(c.chatroomId)
+	return c.sqlChatdata.ChatroomLock(c.chatroomId)
 }
 
 func (c *chatroom) RoomName() string {

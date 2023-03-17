@@ -9,16 +9,16 @@ import (
 type chatdataManager struct {
 	lock sync.Mutex
 
-	chatdata  *SqliteChatdata
-	chatrooms map[string]*chatroom
+	sqlChatdata *SqliteChatdata
+	chatrooms   map[string]*chatroom
 }
 
 func NewChatdataManager(chatdata *SqliteChatdata) chatdata.Manager {
 	return &chatdataManager{
 		lock: sync.Mutex{},
 
-		chatdata:  chatdata,
-		chatrooms: make(map[string]*chatroom),
+		sqlChatdata: chatdata,
+		chatrooms:   make(map[string]*chatroom),
 	}
 }
 
@@ -27,7 +27,7 @@ func (m *chatdataManager) GetLock() sync.Locker {
 }
 
 func (m *chatdataManager) CreateRoom(roomName string) chatdata.Chatroom {
-	chatroom := newChatroom(m.chatdata, roomName)
+	chatroom := newChatroom(m.sqlChatdata, roomName)
 	m.chatrooms[roomName] = chatroom
 
 	return chatroom
