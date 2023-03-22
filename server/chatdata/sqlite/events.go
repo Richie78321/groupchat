@@ -120,6 +120,12 @@ func (c *SqliteChatdata) consumeEvents() {
 	for {
 		newEvent := <-c.incomingEvents
 
+		// Only consume the event when the associated chatroom lock is held.
+		// This is to avoid race conditions if multiple threads are attempting to
+		// access or modify the chatroom state.
+		// The other main user of `c.ConsumeEvent` is the chatserver, which emits
+		// new events. The chatserver must also strictly hold the associated chatroom
+		// lock when consuming these new events.
 		c.ChatroomLock(newEvent.ChatroomId).Lock()
 		c.ConsumeEvent(newEvent)
 		c.ChatroomLock(newEvent.ChatroomId).Unlock()
