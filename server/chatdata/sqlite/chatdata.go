@@ -99,3 +99,30 @@ func (c *SqliteChatdata) loadFromDisk() error {
 
 	return nil
 }
+
+func reverseList[T any](list []T) {
+	for i := 0; i < len(list)/2; i++ {
+		list[i], list[len(list)-i-1] = list[len(list)-i-1], list[i]
+	}
+}
+
+func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*MessageEvent, error) {
+	latestMessages := make([]*MessageEvent, 0)
+	err := c.db.Model(&MessageEvent{}).
+		Joins("Event").
+		Where("Event__chatroom_id = ?", chatroomId).
+		// Order messages by their LTS to preserve causality and provide a consistent
+		// message ordering.
+		Order("Event__lamport_timestamp desc").
+		// Break ties in LTS with the PID to ensure that message ordering is
+		// deterministic across processes.
+		Order("Event__pid").
+		Limit(limit).Find(&latestMessages).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Reverse the order of the messages so the latest message is the last element of the list
+	reverseList(latestMessages)
+	return latestMessages, nil
+}

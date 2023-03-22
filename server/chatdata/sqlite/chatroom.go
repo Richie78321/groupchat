@@ -67,9 +67,18 @@ func (c *chatroom) AppendMessage(author *pb.User, body string) error {
 	}, c.chatroomId)
 }
 
-func (c *chatroom) LatestMessages(n int) []chatdata.Message {
-	// TODO(richie): Implement
-	return nil
+func (c *chatroom) LatestMessages(n int) ([]chatdata.Message, error) {
+	messageEvents, err := c.sqlChatdata.GetLatestMessages(c.chatroomId, n)
+	if err != nil {
+		return nil, err
+	}
+
+	messages := make([]chatdata.Message, len(messageEvents))
+	for i, messageEvent := range messageEvents {
+		messages[i] = newMessage(messageEvent, c.sqlChatdata)
+	}
+
+	return messages, nil
 }
 
 func (c *chatroom) AllMessages() []chatdata.Message {

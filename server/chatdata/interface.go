@@ -25,7 +25,7 @@ type Chatroom interface {
 	Users() []*pb.User
 
 	AppendMessage(*pb.User, string) error
-	LatestMessages(int) []Message
+	LatestMessages(int) ([]Message, error)
 	AllMessages() []Message
 	MessageById(uuid.UUID) (Message, bool)
 }

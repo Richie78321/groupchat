@@ -68,13 +68,13 @@ func (c *memoryChatroom) AppendMessage(author *pb.User, body string) error {
 	return nil
 }
 
-func (c *memoryChatroom) LatestMessages(n int) []chatdata.Message {
+func (c *memoryChatroom) LatestMessages(n int) ([]chatdata.Message, error) {
 	index := len(c.messages) - n
 	if index <= 0 {
-		return c.messages
+		return c.messages, nil
 	}
 
-	return c.messages[index:]
+	return c.messages[index:], nil
 }
 
 func (c *memoryChatroom) AllMessages() []chatdata.Message {
