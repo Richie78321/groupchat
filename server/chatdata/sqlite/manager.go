@@ -37,3 +37,12 @@ func (m *chatdataManager) Room(roomName string) (chatdata.Chatroom, bool) {
 	room, ok := m.chatrooms[roomName]
 	return room, ok
 }
+
+func (m *chatdataManager) SignalSubscriptions(roomName string) {
+	chatroom, ok := m.Room(roomName)
+	if !ok {
+		return
+	}
+
+	chatroom.SignalSubscriptions()
+}

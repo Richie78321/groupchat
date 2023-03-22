@@ -32,9 +32,12 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 		return err
 	}
 
+	chatdataManager := sqlite.NewChatdataManager(chatdata)
+	chatdata.SubscriptionSignal = chatdataManager
+
 	peerManager := replicationclient.NewPeerManager(peers, chatdata)
 	replicationServer := replicationserver.NewReplicationServer(chatdata)
-	chatServer := chatserver.NewChatServer(sqlite.NewChatdataManager(chatdata), peerManager)
+	chatServer := chatserver.NewChatServer(chatdataManager, peerManager)
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		// Keepalive will disconnect an unresponsive client after approximately 1 minute (Time + Timeout).

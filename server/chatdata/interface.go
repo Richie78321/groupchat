@@ -7,7 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+type SubscriptionSignal interface {
+	SignalSubscriptions(string)
+}
+
 type Manager interface {
+	SubscriptionSignal
 	GetLock() sync.Locker
 
 	Room(roomName string) (Chatroom, bool)

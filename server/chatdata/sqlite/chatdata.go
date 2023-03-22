@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
 type SqliteChatdata struct {
@@ -29,6 +30,8 @@ type SqliteChatdata struct {
 
 	incomingEvents chan *pb.Event
 	outgoingEvents chan *pb.Event
+
+	SubscriptionSignal chatdata.SubscriptionSignal
 
 	log *log.Logger
 }
