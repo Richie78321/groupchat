@@ -134,6 +134,8 @@ func (c *SqliteChatdata) consumeEvents() {
 
 // ConsumeNewEvent is a helper function to create a new event and consume it.
 // This function handles populating event metadata like sequence numbers and LTS.
+//
+// This function assumes that the caller is currently holding the associated chatroom lock.
 func (c *SqliteChatdata) ConsumeNewEvent(event *pb.Event, chatroomId string) error {
 	seq, lts := c.useNextSequenceNumber()
 	event.ChatroomId = chatroomId
@@ -141,6 +143,8 @@ func (c *SqliteChatdata) ConsumeNewEvent(event *pb.Event, chatroomId string) err
 	event.SequenceNumber = seq
 	event.LamportTimestamp = lts
 
+	// `c.ConsumeEvent` is called with the assumption that the associated
+	// chatroom lock is already held by the caller of `ConsumeNewEvent`.
 	return c.ConsumeEvent(event)
 }
 
