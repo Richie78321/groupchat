@@ -155,6 +155,9 @@ func (c *SqliteChatdata) ConsumeEvent(event *pb.Event) error {
 
 	c.log.Printf("Consumed new event PID=%s, SEQ=%d, LTS=%d", event.Pid, event.SequenceNumber, event.LamportTimestamp)
 
+	// Signal chatroom subscriptions to update because a new event was consumed.
+	c.SubscriptionSignal.SignalSubscriptions(event.ChatroomId)
+
 	// If the event was not ignored, then broadcast the event to peers.
 	c.outgoingEvents <- event
 	return nil
