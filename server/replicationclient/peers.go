@@ -2,6 +2,7 @@ package replicationclient
 
 import (
 	"context"
+	"io"
 	"sync/atomic"
 	"time"
 
@@ -55,6 +56,8 @@ func (p *Peer) connect(m *PeerManager) {
 			m.log.Printf("Failed to read updates from subscription to `%s`: %v", p.Id, err)
 			continue
 		}
+
+		m.log.Printf("Subscription to `%s` ended", p.Id)
 	}
 }
 
@@ -97,6 +100,9 @@ func (p *Peer) attemptSubscribe(m *PeerManager) (pb.ReplicationService_Subscribe
 func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, m *PeerManager) error {
 	for {
 		update, err := stream.Recv()
+		if err == io.EOF || stream.Context().Err() == context.Canceled {
+			return nil
+		}
 		if err != nil {
 			return err
 		}

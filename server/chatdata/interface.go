@@ -7,7 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+type SubscriptionSignal interface {
+	SignalSubscriptions(string)
+}
+
 type Manager interface {
+	SubscriptionSignal
 	GetLock() sync.Locker
 
 	Room(roomName string) (Chatroom, bool)
@@ -24,8 +29,8 @@ type Chatroom interface {
 	RemoveSubscription(uuid.UUID)
 	Users() []*pb.User
 
-	AppendMessage(*pb.User, string)
-	LatestMessages(int) []Message
+	AppendMessage(*pb.User, string) error
+	LatestMessages(int) ([]Message, error)
 	AllMessages() []Message
 	MessageById(uuid.UUID) (Message, bool)
 }

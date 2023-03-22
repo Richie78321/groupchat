@@ -44,9 +44,9 @@ func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
 		  AND NOT EXISTS (
 			SELECT *
 			FROM events t2
-			WHERE t2.sequence_number = t1.sequence_number + 1
+			WHERE t2.sequence_number = t1.sequence_number + 1 AND t2.pid = ?
 		)
-	`, pid).Scan(&result).Error
+	`, pid, pid).Scan(&result).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

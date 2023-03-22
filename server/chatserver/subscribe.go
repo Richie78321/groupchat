@@ -14,9 +14,14 @@ func sendSubscriptionUpdate(chatroom chatdata.Chatroom, stream pb.ChatService_Su
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
+	messages, err := chatroom.LatestMessages(latestMessageWindow)
+	if err != nil {
+		return err
+	}
+
 	return stream.Send(&pb.ChatroomSubscriptionUpdate{
 		Participants:   chatroom.Users(),
-		LatestMessages: chatdata.MessageListToPb(chatroom.LatestMessages(latestMessageWindow)),
+		LatestMessages: chatdata.MessageListToPb(messages),
 	})
 }
 

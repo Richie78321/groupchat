@@ -59,20 +59,22 @@ func (c *memoryChatroom) Users() (users []*pb.User) {
 	return users
 }
 
-func (c *memoryChatroom) AppendMessage(author *pb.User, body string) {
+func (c *memoryChatroom) AppendMessage(author *pb.User, body string) error {
 	newMessage := newMemoryMessage(author, body)
 
 	c.messages = append(c.messages, newMessage)
 	c.messagesByUuid[newMessage.Id()] = newMessage
+
+	return nil
 }
 
-func (c *memoryChatroom) LatestMessages(n int) []chatdata.Message {
+func (c *memoryChatroom) LatestMessages(n int) ([]chatdata.Message, error) {
 	index := len(c.messages) - n
 	if index <= 0 {
-		return c.messages
+		return c.messages, nil
 	}
 
-	return c.messages[index:]
+	return c.messages[index:], nil
 }
 
 func (c *memoryChatroom) AllMessages() []chatdata.Message {

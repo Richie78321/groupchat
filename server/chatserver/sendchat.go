@@ -18,13 +18,14 @@ func (s *ChatServer) SendChat(ctx context.Context, req *pb.SendChatRequest) (*pb
 	defer chatroom.GetLock().Unlock()
 
 	// Ensure the user is logged in
-	err = ensureUserLoggedIn(chatroom, req.Self)
-	if err != nil {
+	if err := ensureUserLoggedIn(chatroom, req.Self); err != nil {
 		return nil, err
 	}
 
 	// Create the message and append it to the chatroom
-	chatroom.AppendMessage(req.Self, req.Body)
+	if err := chatroom.AppendMessage(req.Self, req.Body); err != nil {
+		return nil, err
+	}
 
 	// A new message has been added, so signal the subscribers
 	chatroom.SignalSubscriptions()
