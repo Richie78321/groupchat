@@ -32,7 +32,7 @@ type Chatroom interface {
 	AppendMessage(*pb.User, string) error
 	LatestMessages(int) ([]Message, error)
 	AllMessages() []Message
-	MessageById(uuid.UUID) (Message, bool)
+	MessageById(uuid.UUID) (Message, bool, error)
 }
 
 type Subscription interface {
@@ -48,7 +48,7 @@ type Message interface {
 	Author() *pb.User
 	Body() string
 
-	Likers() []*pb.User
-	Like(*pb.User) bool
-	Unlike(*pb.User) bool
+	Likers() ([]*pb.User, error)
+	Like(*pb.User) (bool, error)
+	Unlike(*pb.User) (bool, error)
 }

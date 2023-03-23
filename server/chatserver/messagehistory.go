@@ -18,7 +18,12 @@ func (s *ChatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryR
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
+	messages, err := chatdata.MessageListToPb(chatroom.AllMessages())
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.MessageHistoryResponse{
-		Messages: chatdata.MessageListToPb(chatroom.AllMessages()),
+		Messages: messages,
 	}, nil
 }

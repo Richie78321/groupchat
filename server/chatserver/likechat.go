@@ -28,7 +28,10 @@ func (s *ChatServer) LikeChat(ctx context.Context, req *pb.LikeChatRequest) (*pb
 	defer chatroom.GetLock().Unlock()
 
 	// Get the message from the chatroom by UUID
-	message, ok := chatroom.MessageById(messageUuid)
+	message, ok, err := chatroom.MessageById(messageUuid)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "could not find message with uuid `%v` in chatroom `%s`", messageUuid, req.Chatroom.Name)
 	}
@@ -40,9 +43,12 @@ func (s *ChatServer) LikeChat(ctx context.Context, req *pb.LikeChatRequest) (*pb
 
 	var updated bool
 	if req.Like {
-		updated = message.Like(req.Self)
+		updated, err = message.Like(req.Self)
 	} else {
-		updated = message.Unlike(req.Self)
+		updated, err = message.Unlike(req.Self)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	if updated {

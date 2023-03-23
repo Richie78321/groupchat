@@ -75,7 +75,7 @@ func (c *chatroom) LatestMessages(n int) ([]chatdata.Message, error) {
 
 	messages := make([]chatdata.Message, len(messageEvents))
 	for i, messageEvent := range messageEvents {
-		messages[i] = newMessage(messageEvent, c.sqlChatdata)
+		messages[i] = newMessage(messageEvent, c.chatroomId, c.sqlChatdata)
 	}
 
 	return messages, nil
@@ -86,7 +86,14 @@ func (c *chatroom) AllMessages() []chatdata.Message {
 	return nil
 }
 
-func (c *chatroom) MessageById(u uuid.UUID) (chatdata.Message, bool) {
-	// TODO(richie): Implement
-	return nil, false
+func (c *chatroom) MessageById(u uuid.UUID) (chatdata.Message, bool, error) {
+	messageEvent, err := c.sqlChatdata.MessageById(c.chatroomId, u.String())
+	if err != nil {
+		return nil, false, err
+	}
+	if messageEvent == nil {
+		return nil, false, nil
+	}
+
+	return newMessage(messageEvent, c.chatroomId, c.sqlChatdata), true, nil
 }
