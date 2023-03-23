@@ -43,20 +43,20 @@ func (m *memoryMessage) Likers() ([]*pb.User, error) {
 	return likers, nil
 }
 
-func (m *memoryMessage) Like(u *pb.User) bool {
+func (m *memoryMessage) Like(u *pb.User) (bool, error) {
 	if _, ok := m.likersByUsername[u.Username]; ok {
-		return false
+		return false, nil
 	}
 
 	m.likersByUsername[u.Username] = u
-	return true
+	return true, nil
 }
 
-func (m *memoryMessage) Unlike(u *pb.User) bool {
+func (m *memoryMessage) Unlike(u *pb.User) (bool, error) {
 	if _, ok := m.likersByUsername[u.Username]; !ok {
-		return false
+		return false, nil
 	}
 
 	delete(m.likersByUsername, u.Username)
-	return true
+	return true, nil
 }

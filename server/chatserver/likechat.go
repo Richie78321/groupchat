@@ -40,9 +40,12 @@ func (s *ChatServer) LikeChat(ctx context.Context, req *pb.LikeChatRequest) (*pb
 
 	var updated bool
 	if req.Like {
-		updated = message.Like(req.Self)
+		updated, err = message.Like(req.Self)
 	} else {
-		updated = message.Unlike(req.Self)
+		updated, err = message.Unlike(req.Self)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	if updated {

@@ -47,12 +47,12 @@ func (m *message) Likers() ([]*pb.User, error) {
 	return likerUsers, nil
 }
 
-func (m *message) Like(u *pb.User) bool {
+func (m *message) Like(u *pb.User) (bool, error) {
 	// TODO(richie): Implement this method
-	return false
+	return false, nil
 }
 
-func (m *message) Unlike(u *pb.User) bool {
+func (m *message) Unlike(u *pb.User) (bool, error) {
 	// TODO(richie): Implement this method
-	return false
+	return false, nil
 }

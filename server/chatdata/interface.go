@@ -49,6 +49,6 @@ type Message interface {
 	Body() string
 
 	Likers() ([]*pb.User, error)
-	Like(*pb.User) bool
-	Unlike(*pb.User) bool
+	Like(*pb.User) (bool, error)
+	Unlike(*pb.User) (bool, error)
 }
