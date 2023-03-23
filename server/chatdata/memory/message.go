@@ -34,13 +34,13 @@ func (m *memoryMessage) Body() string {
 	return m.body
 }
 
-func (m *memoryMessage) Likers() []*pb.User {
+func (m *memoryMessage) Likers() ([]*pb.User, error) {
 	likers := make([]*pb.User, 0, len(m.likersByUsername))
 	for _, user := range m.likersByUsername {
 		likers = append(likers, user)
 	}
 
-	return likers
+	return likers, nil
 }
 
 func (m *memoryMessage) Like(u *pb.User) bool {

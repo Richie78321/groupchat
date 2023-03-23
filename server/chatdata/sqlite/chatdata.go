@@ -129,3 +129,19 @@ func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*Mes
 	reverseList(latestMessages)
 	return latestMessages, nil
 }
+
+func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*LikeEvent, error) {
+	likeEvents := make([]*LikeEvent, 0)
+
+	// Return the likers only (ignore the unlike events)
+	likers := make([]*LikeEvent, 0)
+	for _, likeEvent := range likeEvents {
+		if !likeEvent.Like {
+			continue
+		}
+
+		likers = append(likers, likeEvent)
+	}
+
+	return likers, nil
+}

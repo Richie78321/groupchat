@@ -31,9 +31,20 @@ func (m *message) Body() string {
 	return m.event.MessageBody
 }
 
-func (m *message) Likers() []*pb.User {
-	// TODO(richie): Implement this method
-	return nil
+func (m *message) Likers() ([]*pb.User, error) {
+	likers, err := m.sqlChatdata.GetLikers(m.event.Event.ChatroomID, m.event.MessageID)
+	if err != nil {
+		return nil, err
+	}
+
+	likerUsers := make([]*pb.User, len(likers))
+	for i, liker := range likers {
+		likerUsers[i] = &pb.User{
+			Username: liker.LikerID,
+		}
+	}
+
+	return likerUsers, nil
 }
 
 func (m *message) Like(u *pb.User) bool {
