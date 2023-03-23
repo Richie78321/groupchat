@@ -81,7 +81,7 @@ func (c *memoryChatroom) AllMessages() []chatdata.Message {
 	return c.messages
 }
 
-func (c *memoryChatroom) MessageById(u uuid.UUID) (chatdata.Message, bool) {
+func (c *memoryChatroom) MessageById(u uuid.UUID) (chatdata.Message, bool, error) {
 	m, ok := c.messagesByUuid[u]
-	return m, ok
+	return m, ok, nil
 }

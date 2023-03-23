@@ -109,18 +109,42 @@ func reverseList[T any](list []T) {
 	}
 }
 
-func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*MessageEvent, error) {
-	latestMessages := make([]*MessageEvent, 0)
-	err := c.db.Model(&MessageEvent{}).
-		Joins("Event").
-		Where("Event__chatroom_id = ?", chatroomId).
+func causalOrdering(tx *gorm.DB) *gorm.DB {
+	return tx.
 		// Order messages by their LTS to preserve causality and provide a consistent
 		// message ordering.
 		Order("Event__lamport_timestamp desc").
 		// Break ties in LTS with the PID to ensure that message ordering is
 		// deterministic across processes.
-		Order("Event__pid").
-		Limit(limit).Find(&latestMessages).Error
+		Order("Event__pid")
+}
+
+func (c *SqliteChatdata) MessageById(chatroomId string, messageId string) (*MessageEvent, error) {
+	message := MessageEvent{}
+	result := causalOrdering(
+		c.db.Model(&MessageEvent{}).
+			Joins("Event").
+			Where("Event__chatroom_id = ? AND message_id = ?", chatroomId, messageId).
+			Limit(1),
+	).Find(&message)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected <= 0 {
+		return nil, nil
+	}
+
+	return &message, nil
+}
+
+func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*MessageEvent, error) {
+	latestMessages := make([]*MessageEvent, 0)
+	err := causalOrdering(
+		c.db.Model(&MessageEvent{}).
+			Joins("Event").
+			Where("Event__chatroom_id = ?", chatroomId).
+			Limit(limit),
+	).Find(&latestMessages).Error
 	if err != nil {
 		return nil, err
 	}
@@ -130,18 +154,56 @@ func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*Mes
 	return latestMessages, nil
 }
 
-func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*LikeEvent, error) {
-	likeEvents := make([]*LikeEvent, 0)
-
-	// Return the likers only (ignore the unlike events)
-	likers := make([]*LikeEvent, 0)
-	for _, likeEvent := range likeEvents {
-		if !likeEvent.Like {
-			continue
-		}
-
-		likers = append(likers, likeEvent)
+func (c *SqliteChatdata) IsLiker(chatroomId string, messageId string, userId string) (bool, error) {
+	likeEvent := LikeEvent{}
+	result := causalOrdering(
+		c.db.Model(&LikeEvent{}).
+			Joins("Event").
+			// Retrieve like events from this chatroom, for this message, and by this user.
+			Where("Event__chatroom_id = ? AND message_id = ? AND liker_id = ?", chatroomId, messageId, userId).
+			Limit(1),
+	).Find(&likeEvent)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	if result.RowsAffected <= 0 {
+		// If there are no like events for this user, that is equivalent to the
+		// user not being a liker.
+		return false, nil
 	}
 
-	return likers, nil
+	return likeEvent.Like, nil
+}
+
+func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*LikeEvent, error) {
+	likeEvents := make([]*LikeEvent, 0)
+	err := causalOrdering(
+		c.db.Model(&LikeEvent{}).
+			Joins("Event").
+			Where("Event__chatroom_id = ? AND message_id = ?", chatroomId, messageId).
+			Order("liker_id"),
+	).Find(&likeEvents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	latestLikeEvents := make([]*LikeEvent, 0)
+	for i := 0; i < len(likeEvents); i++ {
+		event := likeEvents[i]
+		if event.Like {
+			// Only retain the positive like events.
+			latestLikeEvents = append(latestLikeEvents, event)
+		}
+
+		// Keep the first like event from each liker. This works because the
+		// like events are returned from the SQL query ordered first by liker
+		// and then by causal ordering.
+		for i+1 < len(likeEvents) && likeEvents[i+1].LikerID == event.LikerID {
+			i++
+		}
+	}
+
+	c.log.Print(latestLikeEvents)
+
+	return latestLikeEvents, nil
 }

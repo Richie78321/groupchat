@@ -88,6 +88,7 @@ func pbToEvent(event *pb.Event) (interface{}, error) {
 			MessageID: e.MessageLike.MessageUuid,
 			LikerID:   e.MessageLike.LikerId,
 			Like:      e.MessageLike.Like,
+			Event:     dbEvent,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown event type: %v", e)

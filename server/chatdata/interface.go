@@ -32,7 +32,7 @@ type Chatroom interface {
 	AppendMessage(*pb.User, string) error
 	LatestMessages(int) ([]Message, error)
 	AllMessages() []Message
-	MessageById(uuid.UUID) (Message, bool)
+	MessageById(uuid.UUID) (Message, bool, error)
 }
 
 type Subscription interface {
