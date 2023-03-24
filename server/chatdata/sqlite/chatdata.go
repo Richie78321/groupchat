@@ -203,7 +203,5 @@ func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*Like
 		}
 	}
 
-	c.log.Print(latestLikeEvents)
-
 	return latestLikeEvents, nil
 }
