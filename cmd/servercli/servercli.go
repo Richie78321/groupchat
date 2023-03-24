@@ -27,6 +27,11 @@ func peersFromArgs() ([]*replicationclient.Peer, error) {
 			return nil, fmt.Errorf("invalid peer string `%s`", peer)
 		}
 
+		if split[0] == opts.Args.Id {
+			// Ignore peers that have the same ID as this server.
+			continue
+		}
+
 		peers = append(peers, replicationclient.NewPeer(split[0], split[1]))
 	}
 
