@@ -18,7 +18,10 @@ RUN make protoc && make clientcli && make servercli
 
 FROM alpine
 
+# Required for networking emulation / testing
+RUN apk add iproute2
+
 COPY --from=builder /app/bin /bin
-COPY --from=builder /app/scripts /bin
+COPY --from=builder /app/scripts .
 
 ENTRYPOINT ["/bin/sh"]

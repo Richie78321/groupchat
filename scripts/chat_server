@@ -1,8 +1,8 @@
 #!/bin/sh
 
-servercli --port 3000 \
+exec servercli --address 0.0.0.0 --port 3000 \
     -p 1:cs2510_server1:3000 \
     -p 2:cs2510_server2:3000 \
     -p 3:cs2510_server3:3000 \
     -p 4:cs2510_server4:3000 \
-    -p 5:cs2510_server5:3000 $1
+    -p 5:cs2510_server5:3000 $2

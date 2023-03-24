@@ -73,8 +73,8 @@ def init_containers():
     for i in range(1,NUM_SERVERS+1):
         cmd_str = "docker run --cap-add=NET_ADMIN --name {serv} --network {net} --ip {ip} {img} {cmd} {args}".format(serv=server_name(i), net=NETWORK_NAME,
         img=IMAGE_NAME, ip=server_ip(i), cmd=RUN_COMMAND, args="-id {}".format(i))
-        #subprocess.Popen(cmd_str, shell=True)
-        subprocess.Popen(cmd_str, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(cmd_str, shell=True)
+        #subprocess.Popen(cmd_str, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return
 
 # Initialize netem classes for each server
