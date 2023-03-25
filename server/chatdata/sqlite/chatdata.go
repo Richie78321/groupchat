@@ -13,7 +13,7 @@ import (
 	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
-const garbageCollectSleep = 10 * time.Second
+const garbageCollectSleep = 1 * time.Minute
 
 type SqliteChatdata struct {
 	// globalLock is held when inserting an event into the database,
@@ -31,7 +31,7 @@ type SqliteChatdata struct {
 	eventMetadata struct {
 		// GarbageCollectedTo maps from PID to the maximum sequence number from this
 		// PID where garbage collection ran.
-		GarbageCollectedTo map[string]int64 `json:"contiguousUpTo"`
+		GarbageCollectedTo chatdata.GarbageCollectedToVector `json:"contiguousUpTo"`
 	}
 
 	nextSequenceNumber   int64

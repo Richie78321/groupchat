@@ -37,6 +37,11 @@ message SubscribeRequest {
 message SubscriptionUpdate {
     EphemeralState ephemeral_state = 1;
     repeated Event events = 2;
+    // The garbage collected to vector is a map from a process' PID to the maximum
+    // sequence number from this PID where garbage collection ran. This is useful
+    // to assure the subscriber the holes in the sequences numbers below this point
+    // are because of garbage collection.
+    map<string, int64> garbage_collected_to_vector = 3;
 }
 
 service ReplicationService {

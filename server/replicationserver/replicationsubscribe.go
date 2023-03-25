@@ -21,11 +21,12 @@ func (s *subscription) broadcastEvent(event *pb.Event) {
 	s.eventsToBroadcast <- event
 }
 
-func sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func (s *ReplicationServer) sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
 		// TODO(richie): Send a real ephemeral state here
-		EphemeralState: &pb.EphemeralState{},
-		Events:         events,
+		EphemeralState:           &pb.EphemeralState{},
+		Events:                   events,
+		GarbageCollectedToVector: s.synchronizer.GarbageCollectedTo(),
 	})
 }
 
@@ -56,7 +57,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.log.Printf("%v", err)
 		return err
 	}
-	if err := sendSubscriptionUpdate(eventDiff, stream); err != nil {
+	if err := s.sendSubscriptionUpdate(eventDiff, stream); err != nil {
 		s.log.Printf("%v", err)
 		return err
 	}
@@ -66,7 +67,7 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		select {
 		case event := <-subscription.eventsToBroadcast:
 			// When new events are available, send a subscription update
-			if err := sendSubscriptionUpdate([]*pb.Event{event}, stream); err != nil {
+			if err := s.sendSubscriptionUpdate([]*pb.Event{event}, stream); err != nil {
 				s.log.Printf("%v", err)
 				return err
 			}

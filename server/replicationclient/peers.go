@@ -114,6 +114,11 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 			state: update.EphemeralState,
 		})
 
+		// Update the garbage collection vector.
+		if err := m.synchronizer.UpdateGarbageCollectedTo(update.GarbageCollectedToVector); err != nil {
+			return err
+		}
+
 		for _, event := range update.Events {
 			m.synchronizer.IncomingEvents() <- event
 		}

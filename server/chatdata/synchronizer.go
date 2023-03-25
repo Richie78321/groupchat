@@ -3,6 +3,7 @@ package chatdata
 import pb "github.com/Richie78321/groupchat/chatservice"
 
 type SequenceNumberVector map[string]int64
+type GarbageCollectedToVector map[string]int64
 
 type EventSynchronizer interface {
 	// IncomingEvents that should be consumed and persisted.
@@ -16,4 +17,7 @@ type EventSynchronizer interface {
 	// EventDiff returns the events that have not yet been received by the given
 	// sequence number vector.
 	EventDiff(SequenceNumberVector) ([]*pb.Event, error)
+
+	GarbageCollectedTo() GarbageCollectedToVector
+	UpdateGarbageCollectedTo(GarbageCollectedToVector) error
 }

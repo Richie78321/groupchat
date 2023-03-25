@@ -4,7 +4,45 @@ import (
 	"encoding/json"
 	"os"
 	"time"
+
+	"github.com/Richie78321/groupchat/server/chatdata"
 )
+
+func (c *SqliteChatdata) GarbageCollectedTo() chatdata.GarbageCollectedToVector {
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
+
+	// Need to make a copy. Otherwise the returned map could change when the lock is
+	// released.
+	copy := make(chatdata.GarbageCollectedToVector)
+	for key, value := range c.eventMetadata.GarbageCollectedTo {
+		copy[key] = value
+	}
+
+	return copy
+}
+
+func (c *SqliteChatdata) UpdateGarbageCollectedTo(vector chatdata.GarbageCollectedToVector) error {
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
+
+	// Take the maximum from each vector
+	for key, value := range c.eventMetadata.GarbageCollectedTo {
+		newValue, ok := vector[key]
+		if !ok {
+			continue
+		}
+		if newValue < value {
+			continue
+		}
+
+		c.eventMetadata.GarbageCollectedTo[key] = newValue
+	}
+
+	c.log.Printf("Updated garbage collection vector to: %v", c.eventMetadata.GarbageCollectedTo)
+
+	return c.saveEventMetadata()
+}
 
 func (c *SqliteChatdata) loadEventMetadata() error {
 	metadataFile, err := os.ReadFile(c.metadataPath)
@@ -139,7 +177,7 @@ func (c *SqliteChatdata) garbageCollectLikeEvents(pid string, garbageCollectUpTo
 		likeEventsPruned++
 	}
 
-	c.log.Printf("Garbage collection pruned %d LikeEvents", likeEventsPruned)
+	c.log.Printf("Garbage collection pruned %d LikeEvents for PID %s", likeEventsPruned, pid)
 
 	return nil
 }
