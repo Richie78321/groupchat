@@ -27,7 +27,7 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 		peerPids[i] = peer.Id
 	}
 
-	chatdata, err := sqlite.NewSqliteChatdata(fmt.Sprintf("%s.sqlite", id), id, peerPids)
+	chatdata, err := sqlite.NewSqliteChatdata(fmt.Sprintf("./%s.sqlite", id), fmt.Sprintf("./%s.json", id), id, peerPids)
 	if err != nil {
 		return err
 	}

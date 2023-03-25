@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"os"
 	"testing"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
@@ -8,7 +9,10 @@ import (
 )
 
 func makeChatdata(t *testing.T, pid string) *SqliteChatdata {
-	chatdata, err := NewSqliteChatdata(":memory:", pid, []string{"otherpid1"})
+	file, err := os.CreateTemp(os.TempDir(), "*.json")
+	assert.NoError(t, err)
+
+	chatdata, err := NewSqliteChatdata(":memory:", file.Name(), pid, []string{"otherpid1"})
 	assert.NoError(t, err)
 
 	return chatdata

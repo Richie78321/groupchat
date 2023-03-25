@@ -17,6 +17,10 @@ func (c *SqliteChatdata) OutgoingEvents() <-chan *pb.Event {
 }
 
 func (c *SqliteChatdata) SequenceNumberVector() (chatdata.SequenceNumberVector, error) {
+	// Acquire the global lock
+	c.globalLock.Lock()
+	defer c.globalLock.Unlock()
+
 	vector := make(chatdata.SequenceNumberVector)
 	for _, pid := range c.allPids {
 		nextExpected, err := c.nextExpectedSequenceNumber(pid)
@@ -36,17 +40,17 @@ func (c *SqliteChatdata) nextExpectedSequenceNumber(pid string) (int64, error) {
 	}
 
 	// Returns the smallest missing sequence number for a specific PID.
-	// This query could likely be made more efficient, but it works for now.
+	// Any missing sequence numbers from garbage collection are ignored.
 	err := c.db.Raw(`
 		SELECT MIN(sequence_number + 1) AS next_expected
 		FROM events t1
-		WHERE pid = ?
+		WHERE pid = ? AND sequence_number >= ?
 		  AND NOT EXISTS (
 			SELECT *
 			FROM events t2
 			WHERE t2.sequence_number = t1.sequence_number + 1 AND t2.pid = ?
 		)
-	`, pid, pid).Scan(&result).Error
+	`, pid, c.eventMetadata.GarbageCollectedTo[pid], pid).Scan(&result).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

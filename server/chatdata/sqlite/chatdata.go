@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -12,9 +13,12 @@ import (
 	"github.com/Richie78321/groupchat/server/chatdata"
 )
 
+const garbageCollectSleep = 10 * time.Second
+
 type SqliteChatdata struct {
-	// globalLock is held when inserting an event into the database or
-	// accessing / mutating the current sequence number or LTS.
+	// globalLock is held when inserting an event into the database,
+	// accessing / mutating the current sequence number or LTS, or
+	// accessing / mutating event metadata.
 	globalLock sync.Mutex
 	// chatroomLocks are locks for individual chatrooms. Events for a chatroom
 	// should only be consumed if this lock is held.
@@ -22,6 +26,13 @@ type SqliteChatdata struct {
 
 	db    *gorm.DB
 	myPid string
+
+	metadataPath  string
+	eventMetadata struct {
+		// GarbageCollectedTo maps from PID to the maximum sequence number from this
+		// PID where garbage collection ran.
+		GarbageCollectedTo map[string]int64 `json:"contiguousUpTo"`
+	}
 
 	nextSequenceNumber   int64
 	nextLamportTimestamp int64
@@ -38,7 +49,7 @@ type SqliteChatdata struct {
 
 const eventBufferSize = 100
 
-func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*SqliteChatdata, error) {
+func NewSqliteChatdata(dbPath string, metadataPath string, myPid string, otherPids []string) (*SqliteChatdata, error) {
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -54,6 +65,8 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 		db:         db,
 		myPid:      myPid,
 
+		metadataPath: metadataPath,
+
 		nextSequenceNumber:   0,
 		nextLamportTimestamp: 0,
 
@@ -68,6 +81,11 @@ func NewSqliteChatdata(dbPath string, myPid string, otherPids []string) (*Sqlite
 
 	// Spawn a thread to consume new events
 	go c.consumeEvents()
+
+	// Ensure the event metadata is loaded from disk
+	c.loadEventMetadata()
+	// Spawn a thread to periodically garbage collect
+	go c.garbageCollectRoutine()
 
 	return c, nil
 }
