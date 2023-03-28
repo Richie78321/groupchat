@@ -24,6 +24,12 @@ type SqliteChatdata struct {
 	// should only be consumed if this lock is held.
 	chatroomLocks sync.Map
 
+	// stateCaches is a map from chatroom ID to chatroomCache.
+	//
+	// It is assumed that you hold the associated chatroom lock when
+	// accessing / mutating the chatroom cache.
+	stateCaches sync.Map
+
 	db    *gorm.DB
 	myPid string
 
@@ -88,6 +94,11 @@ func NewSqliteChatdata(dbPath string, metadataPath string, myPid string, otherPi
 	go c.garbageCollectRoutine()
 
 	return c, nil
+}
+
+func (c *SqliteChatdata) getChatroomCache(chatroomId string) *chatroomCache {
+	cache, _ := c.stateCaches.LoadOrStore(chatroomId, &chatroomCache{})
+	return cache.(*chatroomCache)
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
