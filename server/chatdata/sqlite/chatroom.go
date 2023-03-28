@@ -68,7 +68,7 @@ func (c *chatroom) AppendMessage(author *pb.User, body string) error {
 }
 
 func (c *chatroom) LatestMessages(n int) ([]chatdata.Message, error) {
-	messageEvents, err := c.sqlChatdata.GetLatestMessages(c.chatroomId, n)
+	messageEvents, err := c.sqlChatdata.LatestMessages(c.chatroomId, n)
 	if err != nil {
 		return nil, err
 	}

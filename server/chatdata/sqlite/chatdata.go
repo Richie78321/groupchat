@@ -166,21 +166,60 @@ func (c *SqliteChatdata) MessageById(chatroomId string, messageId string) (*Mess
 	return &message, nil
 }
 
-func (c *SqliteChatdata) GetLatestMessages(chatroomId string, limit int) ([]*MessageEvent, error) {
-	latestMessages := make([]*MessageEvent, 0)
+func (c *SqliteChatdata) MessageOrdering(chatroomId string) ([]string, error) {
+	cache := c.getChatroomCache(chatroomId)
+	if cache.messageOrder != nil {
+		return cache.messageOrder, nil
+	}
+
+	messageOrder := make([]struct {
+		MessageID string `gorm:"column:message_id"`
+	}, 0)
 	err := causalOrdering(
 		c.db.Model(&MessageEvent{}).
 			Joins("Event").
 			Where("Event__chatroom_id = ?", chatroomId).
-			Limit(limit),
-	).Find(&latestMessages).Error
+			Select("message_id"),
+	).Find(&messageOrder).Error
 	if err != nil {
 		return nil, err
 	}
 
+	// Extract strings from the structs
+	messageOrderStr := make([]string, len(messageOrder))
+	for i, messageOrder := range messageOrder {
+		messageOrderStr[i] = messageOrder.MessageID
+	}
+
 	// Reverse the order of the messages so the latest message is the last element of the list
-	reverseList(latestMessages)
-	return latestMessages, nil
+	reverseList(messageOrderStr)
+
+	// Update the cache with the result
+	cache.messageOrder = messageOrderStr
+
+	return messageOrderStr, nil
+}
+
+func (c *SqliteChatdata) LatestMessages(chatroomId string, limit int) ([]*MessageEvent, error) {
+	ordering, err := c.MessageOrdering(chatroomId)
+	if err != nil {
+		return nil, err
+	}
+	if len(ordering) > limit {
+		ordering = ordering[len(ordering)-limit:]
+	}
+
+	messages := make([]*MessageEvent, len(ordering))
+	for i, messageId := range ordering {
+		message, err := c.MessageById(chatroomId, messageId)
+		if err != nil {
+			return nil, err
+		}
+
+		messages[i] = message
+	}
+
+	return messages, nil
 }
 
 func (c *SqliteChatdata) IsLiker(chatroomId string, messageId string, userId string) (bool, error) {
