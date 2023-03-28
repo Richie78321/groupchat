@@ -207,5 +207,10 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 		c.nextLamportTimestamp = newLts
 	}
 
+	// Invalidate the current state cache associated with the event.
+	if err := c.getChatroomCache(event.ChatroomId).invalidateCache(convertedEvent); err != nil {
+		return false, err
+	}
+
 	return false, c.db.Create(convertedEvent).Error
 }
