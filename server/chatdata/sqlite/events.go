@@ -208,7 +208,7 @@ func (c *SqliteChatdata) consumeEventHelper(event *pb.Event) (bool, error) {
 	}
 
 	// Invalidate the current state cache associated with the event.
-	if err := c.getChatroomCache(event.ChatroomId).InvalidateCache(convertedEvent); err != nil {
+	if err := c.getChatroomCache(event.ChatroomId).invalidateCache(convertedEvent); err != nil {
 		return false, err
 	}
 

@@ -39,11 +39,11 @@ func (m *message) Likers() ([]*pb.User, error) {
 		return nil, err
 	}
 
-	likerUsers := make([]*pb.User, len(likers))
-	for i, liker := range likers {
-		likerUsers[i] = &pb.User{
+	likerUsers := make([]*pb.User, 0, len(likers))
+	for _, liker := range likers {
+		likerUsers = append(likerUsers, &pb.User{
 			Username: liker.LikerID,
-		}
+		})
 	}
 
 	return likerUsers, nil

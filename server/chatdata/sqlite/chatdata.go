@@ -24,11 +24,11 @@ type SqliteChatdata struct {
 	// should only be consumed if this lock is held.
 	chatroomLocks sync.Map
 
-	// stateCaches is a map from chatroom ID to chatroomCache.
+	// chatroomCaches is a map from chatroom ID to chatroomCache.
 	//
 	// It is assumed that you hold the associated chatroom lock when
 	// accessing / mutating the chatroom cache.
-	stateCaches sync.Map
+	chatroomCaches map[string]*chatroomCache
 
 	db    *gorm.DB
 	myPid string
@@ -71,6 +71,8 @@ func NewSqliteChatdata(dbPath string, metadataPath string, myPid string, otherPi
 		db:         db,
 		myPid:      myPid,
 
+		chatroomCaches: make(map[string]*chatroomCache),
+
 		metadataPath: metadataPath,
 
 		nextSequenceNumber:   0,
@@ -97,8 +99,13 @@ func NewSqliteChatdata(dbPath string, metadataPath string, myPid string, otherPi
 }
 
 func (c *SqliteChatdata) getChatroomCache(chatroomId string) *chatroomCache {
-	cache, _ := c.stateCaches.LoadOrStore(chatroomId, &chatroomCache{})
-	return cache.(*chatroomCache)
+	if cache, ok := c.chatroomCaches[chatroomId]; ok {
+		return cache
+	}
+
+	newCache := newChatroomCache()
+	c.chatroomCaches[chatroomId] = newCache
+	return newCache
 }
 
 func (c *SqliteChatdata) loadFromDisk() error {
@@ -149,6 +156,11 @@ func causalOrdering(tx *gorm.DB) *gorm.DB {
 }
 
 func (c *SqliteChatdata) MessageById(chatroomId string, messageId string) (*MessageEvent, error) {
+	cache := c.getChatroomCache(chatroomId)
+	if message, ok := cache.messagesById[messageId]; ok {
+		return message, nil
+	}
+
 	message := MessageEvent{}
 	result := causalOrdering(
 		c.db.Model(&MessageEvent{}).
@@ -162,6 +174,9 @@ func (c *SqliteChatdata) MessageById(chatroomId string, messageId string) (*Mess
 	if result.RowsAffected <= 0 {
 		return nil, nil
 	}
+
+	// Update the cache with the result
+	cache.messagesById[messageId] = &message
 
 	return &message, nil
 }
@@ -223,27 +238,25 @@ func (c *SqliteChatdata) LatestMessages(chatroomId string, limit int) ([]*Messag
 }
 
 func (c *SqliteChatdata) IsLiker(chatroomId string, messageId string, userId string) (bool, error) {
-	likeEvent := LikeEvent{}
-	result := causalOrdering(
-		c.db.Model(&LikeEvent{}).
-			Joins("Event").
-			// Retrieve like events from this chatroom, for this message, and by this user.
-			Where("Event__chatroom_id = ? AND message_id = ? AND liker_id = ?", chatroomId, messageId, userId).
-			Limit(1),
-	).Find(&likeEvent)
-	if result.Error != nil {
-		return false, result.Error
+	likers, err := c.GetLikers(chatroomId, messageId)
+	if err != nil {
+		return false, err
 	}
-	if result.RowsAffected <= 0 {
-		// If there are no like events for this user, that is equivalent to the
-		// user not being a liker.
+
+	likeEvent, ok := likers[userId]
+	if !ok {
 		return false, nil
 	}
 
 	return likeEvent.Like, nil
 }
 
-func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*LikeEvent, error) {
+func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) (map[string]*LikeEvent, error) {
+	cache := c.getChatroomCache(chatroomId)
+	if likers, ok := cache.likersByMessageId[messageId]; ok {
+		return likers, nil
+	}
+
 	likeEvents := make([]*LikeEvent, 0)
 	err := causalOrdering(
 		c.db.Model(&LikeEvent{}).
@@ -255,12 +268,12 @@ func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*Like
 		return nil, err
 	}
 
-	latestLikeEvents := make([]*LikeEvent, 0)
+	latestLikeEvents := make(map[string]*LikeEvent, 0)
 	for i := 0; i < len(likeEvents); i++ {
 		event := likeEvents[i]
 		if event.Like {
 			// Only retain the positive like events.
-			latestLikeEvents = append(latestLikeEvents, event)
+			latestLikeEvents[event.LikerID] = event
 		}
 
 		// Keep the first like event from each liker. This works because the
@@ -270,6 +283,9 @@ func (c *SqliteChatdata) GetLikers(chatroomId string, messageId string) ([]*Like
 			i++
 		}
 	}
+
+	// Update the cache with the result
+	cache.likersByMessageId[messageId] = latestLikeEvents
 
 	return latestLikeEvents, nil
 }

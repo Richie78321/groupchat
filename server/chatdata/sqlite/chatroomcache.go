@@ -7,10 +7,18 @@ import (
 type chatroomCache struct {
 	messageOrder      []string
 	messagesById      map[string]*MessageEvent
-	likersByMessageId map[string][]*LikeEvent
+	likersByMessageId map[string]map[string]*LikeEvent
 }
 
-func (s *chatroomCache) InvalidateCache(newEvent interface{}) error {
+func newChatroomCache() *chatroomCache {
+	return &chatroomCache{
+		messageOrder:      nil,
+		messagesById:      make(map[string]*MessageEvent),
+		likersByMessageId: make(map[string]map[string]*LikeEvent),
+	}
+}
+
+func (s *chatroomCache) invalidateCache(newEvent interface{}) error {
 	switch event := newEvent.(type) {
 	case *MessageEvent:
 		// With a new message, the message order will change.
