@@ -81,9 +81,9 @@ func (c *chatroom) LatestMessages(n int) ([]chatdata.Message, error) {
 	return messages, nil
 }
 
-func (c *chatroom) AllMessages() []chatdata.Message {
-	// TODO(richie): Implement
-	return nil
+func (c *chatroom) AllMessages() ([]chatdata.Message, error) {
+	// Specify no limit (-1) to get the entire message history.
+	return c.LatestMessages(-1)
 }
 
 func (c *chatroom) MessageById(u uuid.UUID) (chatdata.Message, bool, error) {

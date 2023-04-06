@@ -18,12 +18,17 @@ func (s *ChatServer) MessageHistory(ctx context.Context, req *pb.MessageHistoryR
 	chatroom.GetLock().Lock()
 	defer chatroom.GetLock().Unlock()
 
-	messages, err := chatdata.MessageListToPb(chatroom.AllMessages())
+	messages, err := chatroom.AllMessages()
+	if err != nil {
+		return nil, err
+	}
+
+	messagesPb, err := chatdata.MessageListToPb(messages)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.MessageHistoryResponse{
-		Messages: messages,
+		Messages: messagesPb,
 	}, nil
 }

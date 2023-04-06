@@ -220,7 +220,7 @@ func (c *SqliteChatdata) LatestMessages(chatroomId string, limit int) ([]*Messag
 	if err != nil {
 		return nil, err
 	}
-	if len(ordering) > limit {
+	if limit != -1 && len(ordering) > limit {
 		ordering = ordering[len(ordering)-limit:]
 	}
 

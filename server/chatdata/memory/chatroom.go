@@ -77,8 +77,8 @@ func (c *memoryChatroom) LatestMessages(n int) ([]chatdata.Message, error) {
 	return c.messages[index:], nil
 }
 
-func (c *memoryChatroom) AllMessages() []chatdata.Message {
-	return c.messages
+func (c *memoryChatroom) AllMessages() ([]chatdata.Message, error) {
+	return c.messages, nil
 }
 
 func (c *memoryChatroom) MessageById(u uuid.UUID) (chatdata.Message, bool, error) {
