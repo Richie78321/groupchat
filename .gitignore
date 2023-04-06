@@ -28,3 +28,4 @@ go.work
 
 bin/
 *.sqlite
+/[0-9]*.json
