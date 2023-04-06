@@ -12,7 +12,7 @@ type subscription struct {
 	eventsToBroadcast chan *pb.Event
 
 	// esUpdateSignal signals when an update has been made to the ephemeral state.
-	esUpdateSignal util.Signal
+	esUpdateSignal *util.Signal
 }
 
 func newSubscription() *subscription {

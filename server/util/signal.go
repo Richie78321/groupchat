@@ -5,8 +5,8 @@ type Signal struct {
 	signal chan struct{}
 }
 
-func NewSignal() Signal {
-	return Signal{
+func NewSignal() *Signal {
+	return &Signal{
 		// The buffer size is strictly 1 to ensure proper signalling behavior.
 		signal: make(chan struct{}, 1),
 	}

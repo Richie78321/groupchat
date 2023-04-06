@@ -10,7 +10,7 @@ type subscription struct {
 	id   uuid.UUID
 	user *pb.User
 
-	update util.Signal
+	update *util.Signal
 }
 
 func NewSubscription(user *pb.User) Subscription {

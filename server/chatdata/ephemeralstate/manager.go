@@ -16,7 +16,7 @@ type ESManager struct {
 	myPid   string
 	esGroup ESGroup
 
-	Update util.Signal
+	Update *util.Signal
 }
 
 func NewESManager(myPid string) *ESManager {
@@ -24,6 +24,7 @@ func NewESManager(myPid string) *ESManager {
 		Lock:    sync.RWMutex{},
 		myPid:   myPid,
 		esGroup: make(map[string]*pb.EphemeralState),
+		Update:  util.NewSignal(),
 	}
 }
 
