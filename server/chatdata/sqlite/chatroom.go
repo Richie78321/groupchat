@@ -67,6 +67,10 @@ func (c *chatroom) Users() (users []*pb.User) {
 	// that are logged in on multiple servers.
 	usersByUsername := make(map[string]*pb.User)
 	for _, es := range esGroup {
+		if es == nil {
+			continue
+		}
+
 		for _, user := range es.ConnectedClients {
 			usersByUsername[user.Username] = user
 		}
