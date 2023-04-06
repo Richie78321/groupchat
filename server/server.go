@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/chatdata/ephemeralstate"
 	"github.com/Richie78321/groupchat/server/chatdata/sqlite"
 	"github.com/Richie78321/groupchat/server/chatserver"
 	"github.com/Richie78321/groupchat/server/replicationclient"
@@ -31,11 +32,12 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 	if err != nil {
 		return err
 	}
+	esManager := ephemeralstate.NewESManager(id)
 
 	chatdataManager := sqlite.NewChatdataManager(chatdata)
 	chatdata.SubscriptionSignal = chatdataManager
 
-	peerManager := replicationclient.NewPeerManager(peers, chatdata)
+	peerManager := replicationclient.NewPeerManager(peers, esManager, chatdata)
 	replicationServer := replicationserver.NewReplicationServer(chatdata)
 	chatServer := chatserver.NewChatServer(chatdataManager, peerManager)
 
