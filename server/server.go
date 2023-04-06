@@ -38,7 +38,7 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 	chatdata.SubscriptionSignal = chatdataManager
 
 	peerManager := replicationclient.NewPeerManager(peers, esManager, chatdata)
-	replicationServer := replicationserver.NewReplicationServer(chatdata)
+	replicationServer := replicationserver.NewReplicationServer(chatdata, esManager)
 	chatServer := chatserver.NewChatServer(chatdataManager, peerManager)
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{

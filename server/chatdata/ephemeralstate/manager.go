@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/util"
 )
 
 // ESGroup maps from server PID to its ephemeral state.
@@ -14,6 +15,8 @@ type ESManager struct {
 
 	myPid   string
 	esGroup ESGroup
+
+	Update util.Signal
 }
 
 func NewESManager(myPid string) *ESManager {
@@ -36,10 +39,23 @@ func (e *ESManager) UpdateESLocked(pid string, es *pb.EphemeralState) {
 func (e *ESManager) UpdateES(pid string, es *pb.EphemeralState) {
 	e.esGroup[pid] = es
 	if pid == e.myPid {
-		// TODO(richie): Notify peers when your ES updates.
+		e.Update.Signal()
 	}
 }
 
 func (e *ESManager) ES() ESGroup {
 	return e.esGroup
+}
+
+// MyESLocked is the same as MyES except that it first acquires
+// the ESManager lock.
+func (e *ESManager) MyESLocked() *pb.EphemeralState {
+	e.Lock.RLock()
+	defer e.Lock.RUnlock()
+
+	return e.MyES()
+}
+
+func (e *ESManager) MyES() *pb.EphemeralState {
+	return e.esGroup[e.myPid]
 }

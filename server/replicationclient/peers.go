@@ -101,8 +101,11 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 
 		m.log.Printf("Received update from `%s`", p.Id)
 
-		// Update ephemeral state before delivering the event.
-		m.esManager.UpdateESLocked(p.Id, update.EphemeralState)
+		if update.EphemeralState != nil {
+			// A new ephemeral state has been received.
+			// Update this peer's ephemeral state with the ESManager.
+			m.esManager.UpdateESLocked(p.Id, update.EphemeralState)
+		}
 
 		// Update the garbage collection vector.
 		if err := m.synchronizer.UpdateGarbageCollectedTo(update.GarbageCollectedToVector); err != nil {
