@@ -4,7 +4,9 @@ option go_package = "github.com/Richie78321/groupchat/chatservice";
 
 package chatservice;
 
-message EphemeralState {}
+message EphemeralState {
+    map<string, bool> connected_clients = 1;
+}
 
 message MessageAppend {
     string message_uuid = 1;
