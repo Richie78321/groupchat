@@ -4,7 +4,11 @@ option go_package = "github.com/Richie78321/groupchat/chatservice";
 
 package chatservice;
 
-message EphemeralState {}
+message EphemeralState {
+    string origin_pid = 1;
+    repeated string peer_pids = 2;
+    // Other ephemeral data can be added here as needed.
+}
 
 message MessageAppend {
     string message_uuid = 1;
