@@ -2,23 +2,25 @@ package replicationserver
 
 import (
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/Richie78321/groupchat/server/util"
 )
 
-const eventBufferSize = 100
+const (
+	eventBufferSize = 100
+	esBufferSize    = 100
+)
 
 type subscription struct {
 	// A channel of events to broadcast.
 	eventsToBroadcast chan *pb.Event
 
-	// esUpdateSignal signals when an update has been made to the ephemeral state.
-	esUpdateSignal *util.Signal
+	// A channel of ephemeral state updates to broadcast.
+	esToBroadcast chan *pb.EphemeralState
 }
 
 func newSubscription() *subscription {
 	return &subscription{
 		eventsToBroadcast: make(chan *pb.Event, eventBufferSize),
-		esUpdateSignal:    util.NewSignal(),
+		esToBroadcast:     make(chan *pb.EphemeralState, esBufferSize),
 	}
 }
 
@@ -61,6 +63,8 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.log.Printf("%v", err)
 		return err
 	}
+	// In the initial subscription update, send the entirety of the current ephemeral state.
+	// After this, only ephemeral state diffs will be sent.
 	if err := s.sendSubscriptionUpdate(eventDiff, s.esManager.MyESLocked(), stream); err != nil {
 		s.log.Printf("%v", err)
 		return err
@@ -77,9 +81,9 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 				s.log.Printf("%v", err)
 				return err
 			}
-		case <-subscription.esUpdateSignal.GetSignal():
+		case newEs := <-subscription.esToBroadcast:
 			// When a new ephemeral state has been set, send a subscription update.
-			if err := s.sendSubscriptionUpdate([]*pb.Event{}, s.esManager.MyESLocked(), stream); err != nil {
+			if err := s.sendSubscriptionUpdate([]*pb.Event{}, newEs, stream); err != nil {
 				s.log.Printf("%v", err)
 				return err
 			}

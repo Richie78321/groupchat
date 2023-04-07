@@ -56,12 +56,12 @@ func (r *ReplicationServer) broadcastEvents() {
 
 func (r *ReplicationServer) signalESUpdates() {
 	for {
-		<-r.esManager.Update.GetSignal()
-		r.log.Print("Signalling ES update")
+		newEs := <-r.esManager.Updates()
+		r.log.Print("Broadcasting ES update")
 
 		r.lock.Lock()
 		for subscription := range r.subscriptions {
-			subscription.esUpdateSignal.Signal()
+			subscription.esToBroadcast <- newEs
 		}
 		r.lock.Unlock()
 	}

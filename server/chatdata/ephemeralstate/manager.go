@@ -1,11 +1,14 @@
 package ephemeralstate
 
 import (
+	"log"
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
-	"github.com/Richie78321/groupchat/server/util"
+	"google.golang.org/protobuf/proto"
 )
+
+const updatesBufferSize = 100
 
 // ESGroup maps from server PID to its ephemeral state.
 type ESGroup map[string]*pb.EphemeralState
@@ -16,7 +19,7 @@ type ESManager struct {
 	myPid   string
 	esGroup ESGroup
 
-	Update *util.Signal
+	updates chan *pb.EphemeralState
 }
 
 func NewESManager(myPid string) *ESManager {
@@ -24,8 +27,12 @@ func NewESManager(myPid string) *ESManager {
 		Lock:    sync.RWMutex{},
 		myPid:   myPid,
 		esGroup: make(map[string]*pb.EphemeralState),
-		Update:  util.NewSignal(),
+		updates: make(chan *pb.EphemeralState, updatesBufferSize),
 	}
+}
+
+func (e *ESManager) Updates() <-chan *pb.EphemeralState {
+	return e.updates
 }
 
 // UpdateESLocked is the same as UpdateES except that it first acquires
@@ -45,10 +52,7 @@ func (e *ESManager) mergeEs(pid string, newEs *pb.EphemeralState) {
 		return
 	}
 
-	currentChatroomEs := e.esGroup[pid].ChatroomEs
-	for chatroom, newChatroomEs := range newEs.ChatroomEs {
-		currentChatroomEs[chatroom] = newChatroomEs
-	}
+	proto.Merge(e.esGroup[pid], newEs)
 }
 
 // signalChatrooms signals the chatrooms defined in this ephemeral state.
@@ -59,6 +63,8 @@ func (e *ESManager) signalChatrooms(es *pb.EphemeralState) {
 // UpdateES updates the ephemeral state for the server with the provided PID
 // and triggers the related subscribers to update.
 func (e *ESManager) UpdateES(pid string, newEs *pb.EphemeralState) {
+	log.Printf("New update %v", newEs)
+
 	if newEs == nil {
 		panic("updated with nil ephemeral state")
 	}
@@ -72,7 +78,7 @@ func (e *ESManager) UpdateES(pid string, newEs *pb.EphemeralState) {
 	if pid == e.myPid {
 		// If this server's ephemeral state is updated, additionally broadcast the
 		// ephemeral state update to peers.
-		e.Update.Signal()
+		e.updates <- newEs
 	}
 }
 
