@@ -43,7 +43,7 @@ func (c *chatroom) AddSubscription(s chatdata.Subscription) {
 	c.subscriptions[s.Id()] = s
 
 	// Update the ephemeral state with the new client connection
-	c.esManager.ClientConnected(true, s.User())
+	c.esManager.ClientConnected(true, c.chatroomId, s.User())
 }
 
 func (c *chatroom) RemoveSubscription(u uuid.UUID) {
@@ -55,7 +55,7 @@ func (c *chatroom) RemoveSubscription(u uuid.UUID) {
 	delete(c.subscriptions, u)
 
 	// Update the ephemeral state with the client disconnection
-	c.esManager.ClientConnected(false, subscription.User())
+	c.esManager.ClientConnected(false, c.chatroomId, subscription.User())
 }
 
 func (c *chatroom) Users() (users []*pb.User) {
@@ -71,7 +71,12 @@ func (c *chatroom) Users() (users []*pb.User) {
 			continue
 		}
 
-		for _, user := range es.ConnectedClients {
+		chatroomEs, ok := es.ChatroomEs[c.chatroomId]
+		if !ok {
+			continue
+		}
+
+		for _, user := range chatroomEs.ConnectedClients {
 			usersByUsername[user.Username] = user
 		}
 	}
