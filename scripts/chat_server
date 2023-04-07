@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Start the server with 4 other peers.
+# Use exec so SIGTERM is transferred to the server process.
 exec servercli --address 0.0.0.0 --port 3000 \
     -p 1:cs2510_server1:3000 \
     -p 2:cs2510_server2:3000 \
