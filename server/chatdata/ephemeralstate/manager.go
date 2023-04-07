@@ -1,7 +1,6 @@
 package ephemeralstate
 
 import (
-	"log"
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
@@ -59,8 +58,6 @@ func (e *ESManager) signalChatrooms(es *pb.EphemeralState) {
 // UpdateES updates the ephemeral state for the server with the provided PID
 // and triggers the related subscribers to update.
 func (e *ESManager) UpdateES(pid string, newEs *pb.EphemeralState) {
-	log.Printf("New update %v", newEs)
-
 	if newEs == nil {
 		panic("updated with nil ephemeral state")
 	}
