@@ -35,6 +35,7 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 	esManager := ephemeralstate.NewESManager(id)
 
 	chatdataManager := sqlite.NewChatdataManager(chatdata, esManager)
+	esManager.SubscriptionSignal = chatdataManager
 	chatdata.SubscriptionSignal = chatdataManager
 
 	peerManager := replicationclient.NewPeerManager(peers, esManager, chatdata)

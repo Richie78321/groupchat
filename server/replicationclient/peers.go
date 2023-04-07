@@ -30,7 +30,7 @@ func NewPeer(id string, addr string) *Peer {
 func (p *Peer) connect(m *PeerManager) {
 	for {
 		// Reset the state of the peer when retrying the connection
-		m.esManager.DeleteES(p.Id)
+		m.esManager.DeleteESLocked(p.Id)
 		p.Connected.Store(false)
 
 		stream, err := p.attemptSubscribe(m)

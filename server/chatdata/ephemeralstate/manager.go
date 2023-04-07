@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	pb "github.com/Richie78321/groupchat/chatservice"
+	"github.com/Richie78321/groupchat/server/chatdata"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -18,6 +19,8 @@ type ESManager struct {
 
 	myPid   string
 	esGroup ESGroup
+
+	SubscriptionSignal chatdata.SubscriptionSignal
 
 	updates chan *pb.EphemeralState
 }
@@ -35,15 +38,6 @@ func (e *ESManager) Updates() <-chan *pb.EphemeralState {
 	return e.updates
 }
 
-// UpdateESLocked is the same as UpdateES except that it first acquires
-// the ESManager lock.
-func (e *ESManager) UpdateESLocked(pid string, es *pb.EphemeralState) {
-	e.Lock.Lock()
-	defer e.Lock.Unlock()
-
-	e.UpdateES(pid, es)
-}
-
 func (e *ESManager) mergeEs(pid string, newEs *pb.EphemeralState) {
 	if _, ok := e.esGroup[pid]; !ok {
 		// There is no current ephemeral state for this PID, so no merging is
@@ -57,7 +51,9 @@ func (e *ESManager) mergeEs(pid string, newEs *pb.EphemeralState) {
 
 // signalChatrooms signals the chatrooms defined in this ephemeral state.
 func (e *ESManager) signalChatrooms(es *pb.EphemeralState) {
-	// TODO(richie): Implement
+	for chatroom, _ := range es.ChatroomEs {
+		e.SubscriptionSignal.SignalSubscriptions(chatroom)
+	}
 }
 
 // UpdateES updates the ephemeral state for the server with the provided PID
@@ -82,6 +78,15 @@ func (e *ESManager) UpdateES(pid string, newEs *pb.EphemeralState) {
 	}
 }
 
+// UpdateESLocked is the same as UpdateES except that it first acquires
+// the ESManager lock.
+func (e *ESManager) UpdateESLocked(pid string, es *pb.EphemeralState) {
+	e.Lock.Lock()
+	defer e.Lock.Unlock()
+
+	e.UpdateES(pid, es)
+}
+
 // DeleteES removes the ephemeral state for the server with the provided PID
 // and triggers the related subscribers to update.
 // This is typically used when the connection to a peer is lost, so the ephemeral
@@ -96,6 +101,15 @@ func (e *ESManager) DeleteES(pid string) {
 	// Signal the chatrooms whose ephemeral state is being deleted.
 	defer e.signalChatrooms(e.esGroup[pid])
 	delete(e.esGroup, pid)
+}
+
+// DeleteESLocked is the same as DeleteES except that it first acquires
+// the ESManager lock.
+func (e *ESManager) DeleteESLocked(pid string) {
+	e.Lock.Lock()
+	defer e.Lock.Unlock()
+
+	e.DeleteES(pid)
 }
 
 func (e *ESManager) ES() ESGroup {
