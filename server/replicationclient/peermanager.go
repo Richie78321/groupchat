@@ -5,20 +5,26 @@ import (
 	"os"
 
 	"github.com/Richie78321/groupchat/server/chatdata"
+	"github.com/Richie78321/groupchat/server/chatdata/ephemeralstate"
 )
 
 type PeerManager struct {
 	Peers        []*Peer
 	synchronizer chatdata.EventSynchronizer
 
+	esManager *ephemeralstate.ESManager
+
 	log *log.Logger
 }
 
-func NewPeerManager(peers []*Peer, synchronizer chatdata.EventSynchronizer) *PeerManager {
+func NewPeerManager(peers []*Peer, esManager *ephemeralstate.ESManager, synchronizer chatdata.EventSynchronizer) *PeerManager {
 	p := &PeerManager{
 		Peers:        peers,
 		synchronizer: synchronizer,
-		log:          log.New(os.Stdout, "[Replication Client] ", log.Default().Flags()),
+
+		esManager: esManager,
+
+		log: log.New(os.Stdout, "[Replication Client] ", log.Default().Flags()),
 	}
 
 	// Spawn threads to manage peer connections

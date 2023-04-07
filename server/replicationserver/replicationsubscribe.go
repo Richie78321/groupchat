@@ -4,16 +4,23 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
-const eventBufferSize = 100
+const (
+	eventBufferSize = 100
+	esBufferSize    = 100
+)
 
 type subscription struct {
 	// A channel of events to broadcast.
 	eventsToBroadcast chan *pb.Event
+
+	// A channel of ephemeral state updates to broadcast.
+	esToBroadcast chan *pb.EphemeralState
 }
 
 func newSubscription() *subscription {
 	return &subscription{
 		eventsToBroadcast: make(chan *pb.Event, eventBufferSize),
+		esToBroadcast:     make(chan *pb.EphemeralState, esBufferSize),
 	}
 }
 
@@ -21,10 +28,9 @@ func (s *subscription) broadcastEvent(event *pb.Event) {
 	s.eventsToBroadcast <- event
 }
 
-func (s *ReplicationServer) sendSubscriptionUpdate(events []*pb.Event, stream pb.ReplicationService_SubscribeUpdatesServer) error {
+func (s *ReplicationServer) sendSubscriptionUpdate(events []*pb.Event, es *pb.EphemeralState, stream pb.ReplicationService_SubscribeUpdatesServer) error {
 	return stream.Send(&pb.SubscriptionUpdate{
-		// TODO(richie): Send a real ephemeral state here
-		EphemeralState:           &pb.EphemeralState{},
+		EphemeralState:           es,
 		Events:                   events,
 		GarbageCollectedToVector: s.synchronizer.GarbageCollectedTo(),
 	})
@@ -57,17 +63,27 @@ func (s *ReplicationServer) SubscribeUpdates(req *pb.SubscribeRequest, stream pb
 		s.log.Printf("%v", err)
 		return err
 	}
-	if err := s.sendSubscriptionUpdate(eventDiff, stream); err != nil {
+	// In the initial subscription update, send the entirety of the current ephemeral state.
+	// After this, only ephemeral state diffs will be sent.
+	if err := s.sendSubscriptionUpdate(eventDiff, s.esManager.MyESLocked(), stream); err != nil {
 		s.log.Printf("%v", err)
 		return err
 	}
 	s.log.Print("Sent initial update to subscriber")
 
 	for {
+		// Batching multiple ephemeral state and event updates into a single subscription update
+		// would be more efficient here. This can be revisited in the future if necessary.
 		select {
 		case event := <-subscription.eventsToBroadcast:
-			// When new events are available, send a subscription update
-			if err := s.sendSubscriptionUpdate([]*pb.Event{event}, stream); err != nil {
+			// When new events are available, send a subscription update.
+			if err := s.sendSubscriptionUpdate([]*pb.Event{event}, nil, stream); err != nil {
+				s.log.Printf("%v", err)
+				return err
+			}
+		case newEs := <-subscription.esToBroadcast:
+			// When a new ephemeral state has been set, send a subscription update.
+			if err := s.sendSubscriptionUpdate([]*pb.Event{}, newEs, stream); err != nil {
 				s.log.Printf("%v", err)
 				return err
 			}

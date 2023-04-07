@@ -13,32 +13,24 @@ import (
 	pb "github.com/Richie78321/groupchat/chatservice"
 )
 
-// EphemeralStateHolder is necessary to avoid storing a nil value in atomic.Value when
-// *pb.EphemeralState can sometimes be nil.
-type EphemeralStateHolder struct {
-	state *pb.EphemeralState
-}
-
 type Peer struct {
-	Id             string
-	Addr           string
-	Connected      atomic.Bool
-	EphemeralState atomic.Value
+	Id        string
+	Addr      string
+	Connected atomic.Bool
 }
 
 func NewPeer(id string, addr string) *Peer {
 	return &Peer{
-		Id:             id,
-		Addr:           addr,
-		Connected:      atomic.Bool{},
-		EphemeralState: atomic.Value{},
+		Id:        id,
+		Addr:      addr,
+		Connected: atomic.Bool{},
 	}
 }
 
 func (p *Peer) connect(m *PeerManager) {
 	for {
 		// Reset the state of the peer when retrying the connection
-		p.EphemeralState.Store(&EphemeralStateHolder{state: nil})
+		m.esManager.DeleteESLocked(p.Id)
 		p.Connected.Store(false)
 
 		stream, err := p.attemptSubscribe(m)
@@ -109,10 +101,11 @@ func (p *Peer) readUpdates(stream pb.ReplicationService_SubscribeUpdatesClient, 
 
 		m.log.Printf("Received update from `%s`", p.Id)
 
-		// Update ephemeral state before delivering the event.
-		p.EphemeralState.Store(&EphemeralStateHolder{
-			state: update.EphemeralState,
-		})
+		if update.EphemeralState != nil {
+			// A new ephemeral state has been received.
+			// Update this peer's ephemeral state with the ESManager.
+			m.esManager.UpdateESLocked(p.Id, update.EphemeralState)
+		}
 
 		// Update the garbage collection vector.
 		if err := m.synchronizer.UpdateGarbageCollectedTo(update.GarbageCollectedToVector); err != nil {

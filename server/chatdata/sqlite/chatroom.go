@@ -5,18 +5,21 @@ import (
 
 	pb "github.com/Richie78321/groupchat/chatservice"
 	"github.com/Richie78321/groupchat/server/chatdata"
+	"github.com/Richie78321/groupchat/server/chatdata/ephemeralstate"
 	"github.com/google/uuid"
 )
 
 type chatroom struct {
 	sqlChatdata   *SqliteChatdata
+	esManager     *ephemeralstate.ESManager
 	chatroomId    string
 	subscriptions map[uuid.UUID]chatdata.Subscription
 }
 
-func newChatroom(sqlChatdata *SqliteChatdata, chatroomId string) *chatroom {
+func newChatroom(sqlChatdata *SqliteChatdata, esManager *ephemeralstate.ESManager, chatroomId string) *chatroom {
 	return &chatroom{
 		sqlChatdata:   sqlChatdata,
+		esManager:     esManager,
 		chatroomId:    chatroomId,
 		subscriptions: make(map[uuid.UUID]chatdata.Subscription),
 	}
@@ -37,19 +40,49 @@ func (c *chatroom) SignalSubscriptions() {
 }
 
 func (c *chatroom) AddSubscription(s chatdata.Subscription) {
-	// TODO(richie): Update ephemeral data when this changes
 	c.subscriptions[s.Id()] = s
+
+	// Update the ephemeral state with the new client connection
+	c.esManager.ClientConnected(true, c.chatroomId, s.User())
 }
 
 func (c *chatroom) RemoveSubscription(u uuid.UUID) {
-	// TODO(richie): Update ephemeral data when this changes
+	subscription, ok := c.subscriptions[u]
+	if !ok {
+		return
+	}
+
 	delete(c.subscriptions, u)
+
+	// Update the ephemeral state with the client disconnection
+	c.esManager.ClientConnected(false, c.chatroomId, subscription.User())
 }
 
 func (c *chatroom) Users() (users []*pb.User) {
-	// TODO(richie): Implement this using ephemeral data from peers
-	for _, subscription := range c.subscriptions {
-		users = append(users, subscription.User())
+	c.esManager.Lock.RLock()
+	defer c.esManager.Lock.RUnlock()
+
+	esGroup := c.esManager.ES()
+	// Collect the users from each server by username to de-duplicate users
+	// that are logged in on multiple servers.
+	usersByUsername := make(map[string]*pb.User)
+	for _, es := range esGroup {
+		if es == nil {
+			continue
+		}
+
+		chatroomEs, ok := es.ChatroomEs[c.chatroomId]
+		if !ok {
+			continue
+		}
+
+		for _, user := range chatroomEs.ConnectedClients {
+			usersByUsername[user.Username] = user
+		}
+	}
+
+	for _, user := range usersByUsername {
+		users = append(users, user)
 	}
 
 	return users
