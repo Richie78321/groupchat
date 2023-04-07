@@ -60,11 +60,11 @@ func (p *Peer) attemptSubscribe(m *PeerManager) (pb.ReplicationService_Subscribe
 		// grpc.WithBlock() is used to avoid returning from the handler before the connection has been
 		// fully established.
 		grpc.WithBlock(),
-		// Keepalive will disconnect an unresponsive server after approximately 1 minute (Time + Timeout).
-		// This means we have a maximum peer connected status staleness of around 1 minute.
+		// Keepalive will disconnect an unresponsive server after approximately 10 seconds (Time + Timeout).
+		// This means we have a maximum peer connected status staleness of around 10 seconds.
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    30 * time.Second,
-			Timeout: 30 * time.Second,
+			Time:    5 * time.Second,
+			Timeout: 5 * time.Second,
 		}),
 	)
 	if err != nil {

@@ -43,14 +43,14 @@ func Start(id string, address string, peers []*replicationclient.Peer) error {
 	chatServer := chatserver.NewChatServer(chatdataManager, peerManager)
 
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		// Keepalive will disconnect an unresponsive client after approximately 1 minute (Time + Timeout).
-		// This means we have a maximum user online status staleness of around 1 minute.
-		Time:    30 * time.Second,
-		Timeout: 30 * time.Second,
+		// Keepalive will disconnect an unresponsive client after approximately 10 seconds (Time + Timeout).
+		// This means we have a maximum user online status staleness of around 10 seconds.
+		Time:    5 * time.Second,
+		Timeout: 5 * time.Second,
 	}), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-		// Permit keepalive pings from the client at most every 30 seconds. This allows
+		// Permit keepalive pings from the client at most every 5 seconds. This allows
 		// the client to send frequent keepalive pings.
-		MinTime: 30 * time.Second,
+		MinTime: 5 * time.Second,
 	}))
 	pb.RegisterChatServiceServer(grpcServer, chatServer)
 	pb.RegisterReplicationServiceServer(grpcServer, replicationServer)
