@@ -6,8 +6,12 @@ package chatservice;
 
 import "chatservice/chat_service.proto";
 
-message EphemeralState {
+message ChatroomES {
     map<string, User> connected_clients = 1;
+}
+
+message EphemeralState {
+    map<string, ChatroomES> chatroom_es = 1;
 }
 
 message MessageAppend {
