@@ -1,4 +1,9 @@
-# Instructions
+# Distributed Groupchat
+
+## Design
+
+[Design Doc 1](https://docs.google.com/document/d/1WtNcXEWKXn48iFw-FbrP8NJmXR1D3_HMcLqcgoYEg2k/edit?usp=sharing) \
+[Design Doc 2](https://docs.google.com/document/d/12x_JduDuIfentusbBKKCICCVh_vfmNMYNwu4fKb7gNA/edit?usp=sharing)
 
 ## Running via the Test Script
 
